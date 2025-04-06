@@ -3,8 +3,8 @@
 const MAX_ATTEMPTS = 500;       // Max number of attempts to place obstacles
 const MAX_OBSTACLES = 5;        // Max number of obstacles in the game
 
-const OBSTACLE_RADIUS = 40;     // Radius of obstacles
-const PLAYER_RADIUS = 50;       // Radius of the player
+const OBSTACLE_RADIUS = 50;     // Radius of obstacles
+const PLAYER_RADIUS = 30;       // Radius of the player
 
 const TOP_MARGIN = window.innerHeight * 0.3333;
 
@@ -59,7 +59,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             // Draw a circle at the player’s position
             context.beginPath();
-            context.arc(this.collisionX, this.collisionY, 50, 0, Math.PI * 2);
+            context.arc(this.collisionX, this.collisionY, this.collisionRadius, 0, Math.PI * 2);
             
             // save() & restore() allows us to apply globalAlpha only to fill()
             context.save();
@@ -98,6 +98,20 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.speedX = 0;
                 this.speedY = 0;
             }
+
+            // Adjust player position after checking for collisions with obstacles
+            this.game.obstacles.forEach(obstacle => {
+                let [collision, distance, radiusSum, dx, dy] = this.game.checkCollision(this, obstacle)
+                if (collision) {
+                    // Calculate unit vector for direction
+                    const unit_x = dx / distance;
+                    const unit_y = dy / distance;
+                    // Position the player 1 pixels away
+                    this.collisionX = obstacle.collisionX + (radiusSum + 1) * unit_x;
+                    this.collisionY = obstacle.collisionY + (radiusSum + 1) * unit_y;
+
+                }
+            });
 
         }
     }
@@ -194,8 +208,10 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Event listener for mouse movement
             window.addEventListener('mousemove', (e) => {
                 // console.log("moving:", e.offsetX, e.offsetY);
-                this.mouse.x = e.offsetX;
-                this.mouse.y = e.offsetY;
+                if (this.mouse.pressed) {
+                    this.mouse.x = e.offsetX;
+                    this.mouse.y = e.offsetY;
+                }
             });
             // _____ 🐭 _______________ 🐭_____
         }
@@ -205,6 +221,15 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.player.draw(context);
             this.player.update();
             this.obstacles.forEach(obstacle => obstacle.draw(context))
+        }
+
+        // Check for collisions between two objects
+        checkCollision(a,b) {
+            const dx = a.collisionX - b.collisionX;
+            const dy = a.collisionY - b.collisionY;
+            const distance = Math.sqrt(dx**2 + dy**2);
+            const radiusSum = a.collisionRadius + b.collisionRadius
+            return [(distance < radiusSum), distance, radiusSum, dx, dy];
         }
 
         // Initialize obstacles in the game 
