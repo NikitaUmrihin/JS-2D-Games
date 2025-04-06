@@ -31,8 +31,18 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             // Radius of the player's collision area
             this.collisionRadius = 30;
-        }
 
+            // Player speed is initialized 
+            this.speedX = 0;
+            this.speedY = 0;
+
+            // Modifier to control how fast the player moves towards the mouse
+            this.speedModifier = 20;
+
+            // Differences between player and mouse
+            this.dx = 0;
+            this.dy = 0;
+        }
 
         // Draws the player on the canvas
         draw(context) {
@@ -46,14 +56,39 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             context.globalAlpha = 0.25;     // Opacity
             context.fill()                  // Fill the circle
             context.restore();
-
             context.stroke()
+            
+            // Draw a line from player’s position to mouse position 
+            context.beginPath();
+            context.moveTo(this.collisionX, this.collisionY);
+            context.lineTo(this.game.mouse.x, this.game.mouse.y);
+            context.stroke()
+
         }
 
         // Updates player position based on mouse movement
         update() {
-            this.collisionX = this.game.mouse.x;
-            this.collisionY = this.game.mouse.y;
+            this.dx = this.game.mouse.x - this.collisionX;
+            this.dy = this.game.mouse.y - this.collisionY;
+
+            // Calculate distance from mouse to player
+            const distance = Math.sqrt(this.dx**2 + this.dy**2);
+
+            // Calculate speed (zero incase distance is undefined)
+            this.speedX = (this.dx)/distance || 0;
+            this.speedY = (this.dy)/distance || 0;
+            
+            // Move the player 
+            if (distance > this.speedModifier) {
+                this.collisionX += this.speedX * this.speedModifier;
+                this.collisionY += this.speedY * this.speedModifier;
+            }
+            // Stop moving if player is close to the mouse 
+            else {
+                this.speedX = 0;
+                this.speedY = 0;
+            }
+
         }
     }
 
