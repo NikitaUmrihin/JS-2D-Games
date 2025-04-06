@@ -26,6 +26,6 @@ body {
     transform: translate(-50%, -50%);
 }
 
-#obstacles{
+#obstacles, #player-yellow, #player-blue{
     display: none;
 }
