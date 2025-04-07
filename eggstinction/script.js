@@ -1,8 +1,10 @@
 // Constants for game settings
 const MAX_ATTEMPTS = 500;       // Max number of attempts to place obstacles
 const MAX_OBSTACLES = 5;        // Max number of obstacles in the game
-const OBSTACLE_RADIUS = 50;     // Radius of obstacles
-const PLAYER_RADIUS = 30;       // Radius of the player
+const MAX_EGGS = 100;
+const OBSTACLE_RADIUS = 50;
+const PLAYER_RADIUS = 30;
+const EGG_RADIUS = 40;
 const TOP_MARGIN = window.innerHeight *0.333;
 
 
@@ -26,7 +28,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     ctx.lineWidth=3;
     ctx.strokeStyle='white';
 
-    // Player class represents the player character
+    // ========== Player Class ==========
     class Player {
         constructor(game) {
 
@@ -95,9 +97,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 context.moveTo(this.collisionX, this.collisionY);
                 context.lineTo(this.game.mouse.x, this.game.mouse.y);
                 context.stroke()
-
             }
-
         }
 
         // Updates player position based on mouse movement
@@ -150,7 +150,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             if (this.collisionY < TOP_MARGIN + this.collisionRadius)
                 this.collisionY = TOP_MARGIN + this.collisionRadius
             //  Bottom edge
-            else if (this.collisionY > this.game.height - this.collisionRadius)
+            if (this.collisionY > this.game.height - this.collisionRadius)
                 this.collisionY = this.game.height - this.collisionRadius
 
 
@@ -171,7 +171,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
-
+    // ========== Obstacle Class ==========
     class Obstacle {
         constructor(game) {
             this.game = game;
@@ -200,7 +200,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         // Draw obstacle on the canvas 
         draw(context) {
-
+            
             context.drawImage(this.image,
                 this.frameX * this.spriteWidth, this.frameY * this.spriteHeight,
                 this.spriteWidth, this.spriteHeight,
@@ -211,7 +211,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 // Draw circle
                 context.beginPath();
                 context.arc(this.collisionX, this.collisionY, this.collisionRadius, 0, Math.PI * 2);
-
                 // save() & restore() allows us to apply globalAlpha only to fill()
                 context.save();
                 context.fillStyle = 'red';
@@ -224,8 +223,51 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
+    // ========== Egg Class ==========
+    class Egg {
+        constructor(game) {
+            this.game = game;
+            this.collisionRadius = EGG_RADIUS;
+            this.image = document.getElementById("egg");
+            // Margin from canvas edge
+            this.margin = this.collisionRadius * 2;
 
-    // Game class manages the entire game state
+            // Randomize position with respect to margin
+            this.collisionX = this.margin + Math.random()*(this.game.width - 2*this.margin);
+            this.collisionY = TOP_MARGIN + Math.random()*(this.game.height - TOP_MARGIN - this.margin);
+
+            // Sprite dimensions
+            this.spriteWidth = 110;
+            this.spriteHeight = 135;
+            this.width = this.spriteWidth;
+            this.height = this.spriteHeight;
+
+            // Set sprite position 
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5 - 30;
+        }
+
+        // Draws the eggs on the canvas
+        draw(context) {
+            context.drawImage(this.image, this.spriteX, this.spriteY);
+            if (this.game.debug) {
+                // Draw circle
+                context.beginPath();
+                context.arc(this.collisionX, this.collisionY, this.collisionRadius, 0, Math.PI * 2);
+                // save() & restore() allows us to apply globalAlpha only to fill()
+                context.save();
+                context.globalAlpha = 0.25;
+                context.fill()
+                context.restore();
+                context.stroke()
+            }
+        }
+
+    }
+    
+    
+
+    // ========== Game Class ==========
     class Game {
         constructor(canvas) {
             this.canvas = canvas;
@@ -238,6 +280,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Initialize obstacles array
             this.numOfObstacles = MAX_OBSTACLES;
             this.obstacles = [];
+
+            // Initialize eggs array and eggs timer
+            this.eggs = [];
+            this.eggTimer = 0;
+            this.eggInterval = 100;
 
             // Mouse properties (start at canvas center)
             this.mouse = {
@@ -289,7 +336,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 }
             });
             // ______ 🐭 _______________ 🐭______
-
         }
 
         // Render method to update and draw game elements
@@ -299,20 +345,32 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 this.timer = 0;
                 this.obstacles.forEach(obstacle => obstacle.draw(context))
+                this.eggs.forEach(egg => egg.draw(context))
                 this.player.draw(context);
                 this.player.update();
             }
-
             this.timer += deltaTime;
 
+            // Spawn a new egg every 'eggInterval' ms, up to MAX_EGGS
+            if (this.eggTimer > this.eggInterval && this.eggs.length < MAX_EGGS) {
+                this.addEgg();
+                this.eggTimer = 0;
+            } else {
+                this.eggTimer += deltaTime;
+            }
         }
+
         // Check for collisions between two objects
-        checkCollision(a,b) {
+        checkCollision(a, b) {
             const dx = a.collisionX - b.collisionX;
             const dy = a.collisionY - b.collisionY;
-            const distance = Math.sqrt(dx**2 + dy**2);
+            const distance = Math.sqrt(dx ** 2 + dy ** 2);
             const radiusSum = a.collisionRadius + b.collisionRadius
             return [(distance < radiusSum), distance, radiusSum, dx, dy];
+        }
+
+        addEgg() {
+            this.eggs.push(new Egg(this));
         }
 
         // Initialize obstacles in the game 
