@@ -13,13 +13,13 @@ const TOP_MARGIN = window.innerHeight *0.333;
 
 
 // Draw circle
-function drawCircle(context, x, y, radius, color) {
+function drawCircle(context, x, y, radius, color, opacity) {
     context.beginPath();
     context.arc(x, y, radius, 0, Math.PI * 2);
     // save() & restore() allows us to apply globalAlpha only to fill()
     context.save();
     context.fillStyle = color;
-    context.globalAlpha = 0.1;
+    context.globalAlpha = opacity;
     context.fill()
     context.restore();
     context.stroke()
@@ -43,7 +43,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     // Set drawing styles
     ctx.fillStyle='white';
     ctx.lineWidth=3;
-    ctx.strokeStyle='white';
+    ctx.strokeStyle='black';
     ctx.font = '35px Helvetica';
     ctx.textAlign = 'center';
     ctx.textColor = 'black';
@@ -102,7 +102,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.width, this.height);
 
             if (this.game.debug) {
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'white');
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'white', 0.1);
 
                 // Draw line
                 context.beginPath();
@@ -218,7 +218,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.width, this.height);
 
             if (this.game.debug) {
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'blue');
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'blue', 0.1);
             }
         }
 
@@ -263,7 +263,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             context.drawImage(this.image, this.spriteX, this.spriteY);
 
             if (this.game.debug) {
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'orange');
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'orange', 0.1);
                 const timerDisplay = (this.hatchTimer * 0.001).toFixed(0) ;
                 context.fillText(timerDisplay, this.collisionX, this.collisionY - this.collisionRadius*2.4);
             }
@@ -309,9 +309,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             // When hatchTimer goes off - the egg is hatched !
             if (this.hatchTimer > this.hatchInterval) {
-                // Create hatchling
+                // Create hatchling and delete egg
                 this.game.hatchlings.push(new Hatchling(this.game, this.collisionX, this.collisionY));
-                // Delete egg
                 this.needToDelete = true;
                 this.game.removeGameObjects();
             } else {
@@ -340,42 +339,147 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Sprite location
             this.spriteX;
             this.spriteY;
+            
+            // Set sprite frame
+            this.frameX = 0;
+            this.frameY = Math.floor( Math.random() * 2 );
 
             // Initialize deletion flag
             this.needToDelete = false;
         }
 
-        // Draws the hatcling on the canvas
+        // Draws the hatchling on the canvas
         draw(context){
             context.drawImage(
-                this.image,  0, 0,
+                this.image,
+                this.frameX * this.spriteWidth, this.frameY * this.spriteHeight,
                 this.spriteWidth, this.spriteHeight,            
                 this.spriteX, this.spriteY,
                 this.width, this.height
             );
             
             if(this.game.debug){
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'orange')
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'orange', 0.1);
             }
         }
 
-        // Updates hatcling position
+        // Updates hatchling position
         update(){
             // Go up
             this.collisionY -= this.speedY;
             this.spriteX = this.collisionX - this.width * 0.5;
             this.spriteY = this.collisionY - this.height * 0.5 - 50;
 
-            // When arrived to safety, delete hatchling
+            // Check if hatchling arrived to safety
             if(this.collisionY < TOP_MARGIN - this.collisionRadius) {
+                // Delete hatchling, increase score and create butterfly particles
                 this.needToDelete = true;
                 this.game.removeGameObjects();
+                this.game.score++;
+                for (let i=0; i<3; i++){
+                    this.game.particles.push(new Firefly(this.game, this.collisionX, this.collisionY, "yellow"));
+                }   
             }
 
+            // Combine player and obstacles into a list of colliders for the hatchling
+            let Colliders = [this.game.player, ...this.game.obstacles];
+
+            // Check if hatchling collides with other objects
+            Colliders.forEach(obj => {
+                let [collision, distance, radiusSum, dx, dy] = this.game.checkCollision(this, obj);
+                if (collision) {
+                    // Calculate unit vector for direction
+                    const unit_x = dx / distance;
+                    const unit_y = dy / distance;
+                    // Position egg 1 pixels away from object
+                    this.collisionX = obj.collisionX + unit_x * (radiusSum + 1);
+                    this.collisionY = obj.collisionY + unit_y * (radiusSum + 1);
+                }
+            })
+
+            // Check if hatchling collides with enemies 
+            this.game.enemies.forEach(enemy => {
+                if (this.game.checkCollision(this, enemy)[0]){
+                    // Delete hatcling, keep count of dead and create spark particles
+                    this.needToDelete = true;
+                    this.game.removeGameObjects();
+                    this.game.deadHatchlings++;
+                    for (let i=0; i<5; i++){
+                        this.game.particles.push(new Spark(this.game, this.collisionX, this.collisionY, "red"));
+                    }   
+                }
+            })
         }
 
     }
     
+    // ==================== Particle Classes ====================
+    class Particle {
+        constructor(game, x, y, color) {
+            this.game = game;
+            this.collisionX = x;
+            this.collisionY = y;
+            this.color = color;
+
+            // Randomize radius, speed and velocity angle
+            this.radius = Math.floor(Math.random() * 10 + 5)
+            this.speedX = Math.random() * 6 - 3;
+            this.speedY = Math.random() * 2 + 0.5;
+            this.va = Math.random() * 0.1 + 0.01;
+
+            // Initialize angle and deletion flag
+            this.angle = 0;
+            this.needToDelete = false;
+
+        }
+
+        // Draws the particle on the canvas
+        draw(context){
+            context.save();
+            context.fillStyle = this.color;
+            drawCircle(context, this.collisionX, this.collisionY, this.radius, this.color, 0.75);
+            context.restore();
+        }
+
+    }
+
+    // Firefly class - used when a hatchling gets to safety
+    class Firefly extends Particle {
+        update(){
+            // Give the particle wobbly motion
+            this.angle += this.va;
+            this.collisionX += Math.cos(this.angle) * this.speedX; 
+            this.collisionY -= this.speedY;
+
+            // Remove particle when it goes off screen
+            if (this.collisionY < 0 - this.radius){
+                this.needToDelete = true;
+                this.game.removeGameObjects();
+            }
+        }
+    }
+
+    // Spark class - used when a hatchling dies
+    class Spark extends Particle {
+        update(){
+            // Give the particle circular motion
+            this.angle += this.va * 0.5;
+            this.collisionX -= Math.sin(this.angle) * this.speedX;
+            this.collisionY -= Math.cos(this.angle) * this.speedY;
+
+            // Make the particles smaller
+            if (this.radius > 0.1) 
+                this.radius -= 0.05;
+            
+            // Make particles dissapear when they are small enough
+            if (this.radius < 0.2){
+                this.needToDelete = true;
+                this.game.removeGameObjects();
+            }
+        }
+
+    }
+
     // ==================== Enemy Class ====================
     class Enemy {
         constructor(game){
@@ -408,7 +512,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         draw(context) {
             context.drawImage(this.image, this.spriteX, this.spriteY);
             if (this.game.debug) {
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'red');
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'red', 0.1);
             }
         }
 
@@ -446,7 +550,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     }
     
 
-
     // ==================== Game Class ====================
     class Game {
         constructor(canvas) {
@@ -466,12 +569,17 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.eggTimer = 0;
             this.eggInterval = 1000;
             
-            // Initialize enemies and hatchlings array
+            // Initialize enemies, hatchlings and particles array
             this.enemies = [];
             this.hatchlings = [];
-
+            this.particles = [];
+            
             // Array to hold all game objects
             this.allObjects = []; 
+
+            // Initialize score and deadHatchlings to zero
+            this.score = 0;
+            this.deadHatchlings = 0;
 
             // Mouse properties (start at canvas center)
             this.mouse = {
@@ -530,7 +638,18 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             if (this.timer > this.interval) {
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                this.allObjects = [this.player, ...this.eggs, ...this.obstacles, ...this.enemies, ...this.hatchlings];
+
+                // Put all game objects into one array
+                this.allObjects = [
+                    this.player,
+                    ...this.eggs,
+                    ...this.obstacles, 
+                    ...this.enemies, 
+                    ...this.hatchlings, 
+                    ...this.particles
+                ];
+
+                // Initialize timer
                 this.timer = 0;
 
                 // Sort objects by their Y coordinate :
@@ -555,6 +674,15 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             } else {
                 this.eggTimer += deltaTime;
             }
+
+            //  Show score on screen
+            context.save();
+            context.textAlign = 'left';
+            context.fillText('SCORE: ' + this.score, 25, 50);
+            if (this.debug){
+                context.fillText("EGGSTINCT: " + this.deadHatchlings, this.canvas.width-320, 50)
+            }
+            context.restore();
         }
 
         // Check for collisions between two objects
@@ -571,15 +699,14 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
 
         addEnemy(){
-            this.enemies.push(new Enemy(this))
+            this.enemies.push(new Enemy(this));
         }
 
         removeGameObjects(){
-            // Filter only eggs that we don't need to delete
+            // Filter only object that we don't need to delete
             this.eggs = this.eggs.filter(obj => !obj.needToDelete);
-
-            // Filter only hatchlings that we don't need to delete
             this.hatchlings = this.hatchlings.filter(obj => !obj.needToDelete);
+            this.particles = this.particles.filter(obj => !obj.needToDelete);
         }
 
         // Initialize obstacles in the game 
