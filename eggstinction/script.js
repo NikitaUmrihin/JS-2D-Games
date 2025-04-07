@@ -5,7 +5,8 @@ const MAX_EGGS = 10;
 const MAX_ENEMIES = 10;
 const OBSTACLE_RADIUS = 45;
 const PLAYER_RADIUS = 30;
-const EGG_RADIUS = 40;
+const EGG_RADIUS = 45;
+const HATCHLING_RADIUS = 27;
 const ENEMY_RADIUS = 30;
 const ENEMY_SPEED = 5;
 const TOP_MARGIN = window.innerHeight *0.333;
@@ -43,8 +44,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     ctx.fillStyle='white';
     ctx.lineWidth=3;
     ctx.strokeStyle='white';
+    ctx.font = '35px Helvetica';
+    ctx.textAlign = 'center';
+    ctx.textColor = 'black';
 
-    // ========== Player Class ==========
+    // ==================== Player Class ====================
     class Player {
         constructor(game) {
 
@@ -98,13 +102,13 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.width, this.height);
 
             if (this.game.debug) {
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'white')
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'white');
 
                 // Draw line
                 context.beginPath();
                 context.moveTo(this.collisionX, this.collisionY);
                 context.lineTo(this.game.mouse.x, this.game.mouse.y);
-                context.stroke()
+                context.stroke();
             }
         }
 
@@ -154,15 +158,15 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             //  Vertical boundaries - Top edge
             if (this.collisionY < TOP_MARGIN + this.collisionRadius)
-                this.collisionY = TOP_MARGIN + this.collisionRadius
+                this.collisionY = TOP_MARGIN + this.collisionRadius;
             //  Vertical boundaries - Bottom edge
             if (this.collisionY > this.game.height - this.collisionRadius)
-                this.collisionY = this.game.height - this.collisionRadius
+                this.collisionY = this.game.height - this.collisionRadius;
 
 
             // Adjust player position after checking for collisions with obstacles
             this.game.obstacles.forEach(obstacle => {
-                let [collision, distance, radiusSum, dx, dy] = this.game.checkCollision(this, obstacle)
+                let [collision, distance, radiusSum, dx, dy] = this.game.checkCollision(this, obstacle);
                 if (collision) {
                     // Calculate unit vector for direction
                     const unit_x = dx / distance;
@@ -177,7 +181,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
-    // ========== Obstacle Class ==========
+    // ==================== Obstacle Class ====================
     class Obstacle {
         constructor(game) {
             this.game = game;
@@ -195,8 +199,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.height = this.spriteHeight;
 
             // Set sprite position 
-            this.spriteX = this.collisionX - this.width * 0.5
-            this.spriteY = this.collisionY - this.height * 0.5
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5;
 
             // Randomize the sprite frame for variety 
             this.frameX = Math.floor(Math.random() * 4);
@@ -214,7 +218,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.width, this.height);
 
             if (this.game.debug) {
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'blue')
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'blue');
             }
         }
 
@@ -222,7 +226,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
-    // ========== Egg Class ==========
+    // ==================== Egg Class ====================
     class Egg {
         constructor(game) {
             this.game = game;
@@ -245,18 +249,28 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Sprite position 
             this.spriteX;
             this.spriteY;
+
+            // Initialize hatch timer
+            this.hatchTimer = 0;
+            this.hatchInterval = 5000;
+
+            // Initialize deletion flag
+            this.needToDelete = false;
         }
 
         // Draws the eggs on the canvas
         draw(context) {
             context.drawImage(this.image, this.spriteX, this.spriteY);
+
             if (this.game.debug) {
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'orange')
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'orange');
+                const timerDisplay = (this.hatchTimer * 0.001).toFixed(0) ;
+                context.fillText(timerDisplay, this.collisionX, this.collisionY - this.collisionRadius*2.4);
             }
         }
 
-        // Updates egg position based on player movement
-        update() {
+        // Updates egg position
+        update(deltaTime) {
 
             // Update sprite location
             this.spriteX = this.collisionX - this.width * 0.5;
@@ -271,10 +285,10 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             //  Vertical boundaries - Top edge
             if (this.collisionY < TOP_MARGIN + this.collisionRadius)
-                this.collisionY = TOP_MARGIN + this.collisionRadius
+                this.collisionY = TOP_MARGIN + this.collisionRadius;
             //  Vertical boundaries - Bottom edge
             if (this.collisionY > this.game.height - this.collisionRadius)
-                this.collisionY = this.game.height - this.collisionRadius
+                this.collisionY = this.game.height - this.collisionRadius;
 
             // Combine player, obstacles and enemies into a list of colliders for the egg
             // The spread operator (...) unpacks the elements of an array or object into individual elements
@@ -292,10 +306,77 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     this.collisionY = obj.collisionY + unit_y * (radiusSum + 1);
                 }
             })
+
+            // When hatchTimer goes off - the egg is hatched !
+            if (this.hatchTimer > this.hatchInterval) {
+                // Create hatchling
+                this.game.hatchlings.push(new Hatchling(this.game, this.collisionX, this.collisionY));
+                // Delete egg
+                this.needToDelete = true;
+                this.game.removeGameObjects();
+            } else {
+                this.hatchTimer += deltaTime;
+            }
         }
     }
+
+    // ==================== Hatchling Class ====================
+    class Hatchling {
+        constructor(game, x, y){
+            this.game = game;
+            // Initialize location, radius and speed
+            this.collisionX = x;
+            this.collisionY = y;
+            this.collisionRadius = HATCHLING_RADIUS;
+            this.speedY = 1 + Math.random();
+
+            // Set image and sprite dimensions
+            this.image = document.getElementById('hatchling');
+            this.spriteWidth = 150;
+            this.spriteHeight = 150;
+            this.width = this.spriteWidth;
+            this.height = this.spriteHeight;
+
+            // Sprite location
+            this.spriteX;
+            this.spriteY;
+
+            // Initialize deletion flag
+            this.needToDelete = false;
+        }
+
+        // Draws the hatcling on the canvas
+        draw(context){
+            context.drawImage(
+                this.image,  0, 0,
+                this.spriteWidth, this.spriteHeight,            
+                this.spriteX, this.spriteY,
+                this.width, this.height
+            );
+            
+            if(this.game.debug){
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'orange')
+            }
+        }
+
+        // Updates hatcling position
+        update(){
+            // Go up
+            this.collisionY -= this.speedY;
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5 - 50;
+
+            // When arrived to safety, delete hatchling
+            if(this.collisionY < TOP_MARGIN - this.collisionRadius) {
+                this.needToDelete = true;
+                this.game.removeGameObjects();
+            }
+
+        }
+
+    }
     
-    // ========== Enemy Class ==========
+    // ==================== Enemy Class ====================
     class Enemy {
         constructor(game){
             this.game = game;
@@ -325,9 +406,9 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         // Draws the enemy on the canvas
         draw(context) {
-            context.drawImage(this.image, this.spriteX, this.spriteY)
+            context.drawImage(this.image, this.spriteX, this.spriteY);
             if (this.game.debug) {
-                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'red')
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'red');
             }
         }
 
@@ -365,7 +446,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     }
     
 
-    // ========== Game Class ==========
+
+    // ==================== Game Class ====================
     class Game {
         constructor(canvas) {
             this.canvas = canvas;
@@ -384,8 +466,9 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.eggTimer = 0;
             this.eggInterval = 1000;
             
-            // Initialize enemies array
+            // Initialize enemies and hatchlings array
             this.enemies = [];
+            this.hatchlings = [];
 
             // Array to hold all game objects
             this.allObjects = []; 
@@ -395,7 +478,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 x: this.width * 0.5,
                 y: this.height * 0.5,
                 pressed: false
-            }
+            };
 
             // Flag for debug mode
             this.debug = true;
@@ -447,7 +530,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             if (this.timer > this.interval) {
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                this.allObjects = [this.player, ...this.eggs, ...this.obstacles, ...this.enemies]
+                this.allObjects = [this.player, ...this.eggs, ...this.obstacles, ...this.enemies, ...this.hatchlings];
                 this.timer = 0;
 
                 // Sort objects by their Y coordinate :
@@ -459,7 +542,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 // Draw and update all objects
                 this.allObjects.forEach(obj => {
                     obj.draw(context);
-                    obj.update();
+                    obj.update(deltaTime);
                 });
 
             }
@@ -479,7 +562,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             const dx = a.collisionX - b.collisionX;
             const dy = a.collisionY - b.collisionY;
             const distance = Math.sqrt(dx ** 2 + dy ** 2);
-            const radiusSum = a.collisionRadius + b.collisionRadius
+            const radiusSum = a.collisionRadius + b.collisionRadius;
             return [(distance < radiusSum), distance, radiusSum, dx, dy];
         }
 
@@ -489,6 +572,14 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         addEnemy(){
             this.enemies.push(new Enemy(this))
+        }
+
+        removeGameObjects(){
+            // Filter only eggs that we don't need to delete
+            this.eggs = this.eggs.filter(obj => !obj.needToDelete);
+
+            // Filter only hatchlings that we don't need to delete
+            this.hatchlings = this.hatchlings.filter(obj => !obj.needToDelete);
         }
 
         // Initialize obstacles in the game 
