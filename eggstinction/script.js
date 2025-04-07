@@ -1,12 +1,25 @@
 // Constants for game settings
 const MAX_ATTEMPTS = 500;       // Max number of attempts to place obstacles
 const MAX_OBSTACLES = 5;        // Max number of obstacles in the game
-const MAX_EGGS = 100;
+const MAX_EGGS = 10;
 const OBSTACLE_RADIUS = 50;
 const PLAYER_RADIUS = 30;
 const EGG_RADIUS = 40;
 const TOP_MARGIN = window.innerHeight *0.333;
 
+
+// Draw circle
+function drawCircle(context, x, y, radius, color) {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    // save() & restore() allows us to apply globalAlpha only to fill()
+    context.save();
+    context.fillStyle = color;
+    context.globalAlpha = 0.1;
+    context.fill()
+    context.restore();
+    context.stroke()
+}
 
 window.addEventListener('load', function ()     // Waits for the whole page to load before running the code
 { 
@@ -82,15 +95,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.width, this.height);
 
             if (this.game.debug) {
-                // Draw circle
-                context.beginPath();
-                context.arc(this.collisionX, this.collisionY, this.collisionRadius, 0, Math.PI * 2);
-                // save() & restore() allows us to apply globalAlpha only to fill()
-                context.save();
-                context.globalAlpha = 0.25;
-                context.fill()
-                context.restore();
-                context.stroke()
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'white')
 
                 // Draw line
                 context.beginPath();
@@ -137,19 +142,17 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.spriteX = this.collisionX - this.width * 0.5;
             this.spriteY = this.collisionY - this.height * 0.5;
 
-            //  Horizontal boundaries
-            //  Left edge
+            //  Horizontal boundaries - Left edge
             if (this.collisionX < this.collisionRadius)
                 this.collisionX = this.collisionRadius;
-            //  Right edge
+            //  Horizontal boundaries - Right edge
             else if (this.collisionX > this.game.width - this.collisionRadius)
                 this.collisionX = this.game.width - this.collisionRadius;
 
-            //  Vertical boundaries
-            //  Top edge
+            //  Vertical boundaries - Top edge
             if (this.collisionY < TOP_MARGIN + this.collisionRadius)
                 this.collisionY = TOP_MARGIN + this.collisionRadius
-            //  Bottom edge
+            //  Vertical boundaries - Bottom edge
             if (this.collisionY > this.game.height - this.collisionRadius)
                 this.collisionY = this.game.height - this.collisionRadius
 
@@ -208,18 +211,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.width, this.height);
 
             if (this.game.debug) {
-                // Draw circle
-                context.beginPath();
-                context.arc(this.collisionX, this.collisionY, this.collisionRadius, 0, Math.PI * 2);
-                // save() & restore() allows us to apply globalAlpha only to fill()
-                context.save();
-                context.fillStyle = 'red';
-                context.globalAlpha = 0.1;
-                context.fill()
-                context.restore();
-                context.stroke()
-
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'red')
             }
+        }
+
+        update() {
         }
     }
 
@@ -227,42 +223,59 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     class Egg {
         constructor(game) {
             this.game = game;
+
+            // Set egg radius and image
             this.collisionRadius = EGG_RADIUS;
             this.image = document.getElementById("egg");
-            // Margin from canvas edge
+            
+            // Randomize location, keeping a margin from the borders
             this.margin = this.collisionRadius * 2;
-
-            // Randomize position with respect to margin
             this.collisionX = this.margin + Math.random()*(this.game.width - 2*this.margin);
             this.collisionY = TOP_MARGIN + Math.random()*(this.game.height - TOP_MARGIN - this.margin);
 
-            // Sprite dimensions
+            // Set sprite size
             this.spriteWidth = 110;
             this.spriteHeight = 135;
             this.width = this.spriteWidth;
             this.height = this.spriteHeight;
 
-            // Set sprite position 
-            this.spriteX = this.collisionX - this.width * 0.5;
-            this.spriteY = this.collisionY - this.height * 0.5 - 30;
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;
         }
 
         // Draws the eggs on the canvas
         draw(context) {
             context.drawImage(this.image, this.spriteX, this.spriteY);
             if (this.game.debug) {
-                // Draw circle
-                context.beginPath();
-                context.arc(this.collisionX, this.collisionY, this.collisionRadius, 0, Math.PI * 2);
-                // save() & restore() allows us to apply globalAlpha only to fill()
-                context.save();
-                context.globalAlpha = 0.25;
-                context.fill()
-                context.restore();
-                context.stroke()
+                drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'blue')
             }
         }
 
+        // Updates egg position based on player movement
+        update() {
+
+            // Update sprite location
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5 - 30;
+
+            // Combine player and obstacles into a list of colliders for the egg
+            // The spread operator (...) unpacks the elements of an array or object into individual elements
+            let Colliders = [this.game.player, ...this.game.obstacles];
+
+            // Check if eggs collide with other objects
+            Colliders.forEach(obj => {
+                let [collision, distance, radiusSum, dx, dy] = this.game.checkCollision(this, obj);
+                if (collision) {
+                    // Calculate unit vector for direction
+                    const unit_x = dx / distance;
+                    const unit_y = dy / distance;
+                    // Position egg 1 pixels away from object
+                    this.collisionX = obj.collisionX + unit_x * (radiusSum + 1);
+                    this.collisionY = obj.collisionY + unit_y * (radiusSum + 1);
+                }
+            })
+        }
     }
     
     
@@ -284,7 +297,10 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Initialize eggs array and eggs timer
             this.eggs = [];
             this.eggTimer = 0;
-            this.eggInterval = 100;
+            this.eggInterval = 1000;
+
+            // Array to hold all game objects
+            this.allObjects = []; 
 
             // Mouse properties (start at canvas center)
             this.mouse = {
@@ -343,11 +359,21 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             if (this.timer > this.interval) {
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                this.allObjects = [...this.eggs, ...this.obstacles, this.player]
                 this.timer = 0;
-                this.obstacles.forEach(obstacle => obstacle.draw(context))
-                this.eggs.forEach(egg => egg.draw(context))
-                this.player.draw(context);
-                this.player.update();
+
+                // Sort objects by their Y coordinate :
+                //      Allows us to control drawing order and create a 3D experience
+                this.allObjects.sort((a,b) => {
+                    return a.collisionY - b.collisionY;
+                });
+
+                // Draw and update all objects
+                this.allObjects.forEach(obj => {
+                    obj.draw(context);
+                    obj.update();
+                });
+
             }
             this.timer += deltaTime;
 
@@ -397,7 +423,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     if(distance < testObstacle.collisionRadius + obstacle.collisionRadius + space) {
                         overlap = true;
                     }
-
                 });
 
                 const margin = 2.25 * testObstacle.collisionRadius
@@ -408,13 +433,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     testObstacle.collisionY > TOP_MARGIN + margin &&
                     testObstacle.collisionY < this.height - margin;
 
-
                 if (!overlap && insideGame) {
                     this.obstacles.push(testObstacle);
                 }
 
                 attempts++;
-
             }
         }
     }
