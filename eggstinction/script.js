@@ -95,11 +95,15 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         // Draws the player on the canvas
         draw(context) {
 
-            context.drawImage(this.image,
+            context.drawImage(
+                this.image, 
+                // Cropping area
                 this.frameX * this.spriteWidth, this.frameY * this.spriteHeight,
                 this.spriteWidth, this.spriteHeight,
+                // Image location
                 this.spriteX, this.spriteY - 100,
-                this.width, this.height);
+                this.width, this.height
+            );
 
             if (this.game.debug) {
                 drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'white', 0.1);
@@ -252,7 +256,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             // Initialize hatch timer
             this.hatchTimer = 0;
-            this.hatchInterval = 5000;
+            this.hatchInterval = 7000;
 
             // Initialize deletion flag
             this.needToDelete = false;
@@ -307,8 +311,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 }
             })
 
-            // When hatchTimer goes off - the egg is hatched !
-            if (this.hatchTimer > this.hatchInterval) {
+            // When hatchTimer goes off or arrived to safety - the egg is hatched !
+            if (this.hatchTimer > this.hatchInterval || this.collisionY < TOP_MARGIN + 0.5*this.collisionRadius) {
                 // Create hatchling and delete egg
                 this.game.hatchlings.push(new Hatchling(this.game, this.collisionX, this.collisionY));
                 this.needToDelete = true;
@@ -487,7 +491,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             // Set enemy radius and image
             this.collisionRadius = ENEMY_RADIUS;
-            this.image = document.getElementById('enemy');
+            this.image = document.getElementById('enemies');
+            
+            // Set sprite frames
+            this.frameX = 0;
+            this.frameY = Math.floor(Math.random()*4);
 
             // Set enemy speed and delay
             this.speedX = Math.random() * 3 + ENEMY_SPEED;
@@ -510,7 +518,14 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         // Draws the enemy on the canvas
         draw(context) {
-            context.drawImage(this.image, this.spriteX, this.spriteY);
+            context.drawImage(
+                this.image,
+                this.frameX*this.spriteWidth, this.frameY*this.spriteHeight,
+                this.spriteWidth, this.spriteHeight,
+                this.spriteX, this.spriteY,
+                this.width, this.height
+            );
+
             if (this.game.debug) {
                 drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'red', 0.1);
             }
@@ -528,6 +543,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             if (this.spriteX + this.width < 0) {
                 this.collisionX = this.game.width + this.width + this.delay;
                 this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+                this.frameY = Math.floor(Math.random()*4);
             }
             
             // Combine player and obstacles into a list of colliders for the enemy
