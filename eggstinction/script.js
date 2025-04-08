@@ -140,15 +140,16 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.spriteX;
             this.spriteY;
     
-            // Frame for player animation
+            // Frames for player animation
             this.frameX = 0;
-            this.frameY = 2;
+            this.frameY = 5;
+            this.maxFrames = 58;
         }
         
         restart(){
             this.collisionX = this.game.width * 0.5;
             this.collisionY = this.game.height * 0.5;
-            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteX = this.collisionX - this.width * 0.5 - 100;
             this.spriteY = this.collisionY - this.height * 0.5;
         }
             
@@ -161,7 +162,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.frameX * this.spriteWidth, this.frameY * this.spriteHeight,
                 this.spriteWidth, this.spriteHeight,
                 // Image location
-                this.spriteX, this.spriteY - 100,
+                this.spriteX, this.spriteY,
                 this.width, this.height
             );
     
@@ -197,7 +198,12 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             else if (angle < 1.96) this.frameY = 4;
             else if (angle < 2.74) this.frameY = 5;
             else if (angle < 2.74) this.frameY = 5;
-    
+            
+            // Sprite animation
+            if (this.frameX < this.maxFrames)
+                this.frameX ++;
+            else this.frameX = 0;
+
             if (distance > this.speedModifier) {
                 // Calculate speed (zero incase distance is undefined)
                 this.speedX = (this.dx) / distance || 0;
@@ -404,10 +410,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.spriteX;
             this.spriteY;
             
-            // Set sprite frame
+            // Frames for hatchling animation
             this.frameX = 0;
             this.frameY = Math.floor( Math.random() * 2 );
-    
+            this.maxFrames = 38;
+
             // Initialize deletion flag
             this.needToDelete = false;
         }
@@ -445,6 +452,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 }   
             }
     
+            // Sprite animation
+            if (this.frameX < this.maxFrames)
+                this.frameX ++;
+            else this.frameX = 0;
+
             // Combine player, eggs and obstacles into a list of colliders for the hatchling
             let Colliders = [this.game.player, ...this.game.obstacles, ...this.game.eggs];
     
