@@ -751,9 +751,10 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Event listener for pressed keys
             window.addEventListener('keydown', (e) => {
                 // If button 'd' pressed -> toggle debug mode
-                if (e.key === 'd') this.debug = !this.debug
+                if (e.key === 'd')  this.debug = !this.debug;
                 // If button 'c' pressed and in debug mode -> console.log all game objects
-                if (e.key === 'c' && this.debug) console.log(this.enemies)
+                if (e.key === 'c' && this.debug) console.log(this.enemies);
+                if (e.key === 'f') this.toggleFullscreen();
                 // If button 'r' pressed -> restart game
                 if (e.key === 'r') {
                     this.restart();
@@ -889,7 +890,17 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             else
                 this.enemies.push(new Menemy(this));
         }
-    
+        
+        toggleFullscreen(){
+            if (!document.fullscreenElement){
+                document.documentElement.requestFullscreen();
+            }
+            else {
+                document.exitFullscreen();
+            }
+
+        }
+
         removeGameObjects(objects){
             // Filter only object that we don't need to delete
             objects = objects.filter(obj => !obj.needToDelete);
