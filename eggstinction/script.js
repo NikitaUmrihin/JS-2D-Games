@@ -2,7 +2,7 @@
 const MAX_ATTEMPTS = 500;       // Max number of attempts to place obstacles
 const MAX_OBSTACLES = 5;        // Max number of obstacles in the game
 const MAX_EGGS = 10;
-const MAX_ENEMIES = 5;
+const MAX_ENEMIES = 8;
 
 const OBSTACLE_RADIUS = 45;
 const PLAYER_RADIUS = 30;
@@ -11,9 +11,11 @@ const HATCHLING_RADIUS = 27;
 const ENEMY_RADIUS = 30;
 
 const TOP_MARGIN = window.innerHeight *0.333;
-const SECONDS_TO_HATCH = 5  ;
-const ENEMY_SPEED = 5;
-const GOAL = 25;
+const SECONDS_TO_HATCH = 5;
+const ENEMY_SPEED = 2;
+const GOAL = 20;
+
+const PLAYER_COLORS = ['yellow', 'blue']
 
 // ==================== Utility Functions ====================
 
@@ -35,6 +37,7 @@ function showFinalMessage(game, context, canvas, deadHatchlings, score){
     context.save();
     context.fillStyle = 'rgba(0,0,0,0.75)';
     context.fillRect(0, 0, canvas.width, canvas.height);
+
     let msg1;
     let msg2;
     
@@ -141,7 +144,14 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.frameX = 0;
             this.frameY = 2;
         }
-    
+        
+        restart(){
+            this.collisionX = this.game.width * 0.5;
+            this.collisionY = this.game.height * 0.5;
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5;
+        }
+            
         // Draws the player on the canvas
         draw(context) {
     
@@ -294,7 +304,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.collisionX = this.margin + Math.random()*(this.game.width - 2*this.margin);
             this.collisionY = TOP_MARGIN + Math.random()*(this.game.height - TOP_MARGIN - this.margin);
     
-            // Set sprite size
+            // Set sprite dimensions
             this.spriteWidth = 110;
             this.spriteHeight = 135;
             this.width = this.spriteWidth;
@@ -429,14 +439,14 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 // Delete hatchling, increase score and create butterfly particles
                 this.needToDelete = true;
                 this.game.hatchlings = this.game.removeGameObjects(this.game.hatchlings);
-                this.game.score++;
+                if (!this.game.gameOver) this.game.score++;
                 for (let i=0; i<3; i++){
                     this.game.particles.push(new Firefly(this.game, this.collisionX, this.collisionY, "yellow"));
                 }   
             }
     
-            // Combine player and obstacles into a list of colliders for the hatchling
-            let Colliders = [this.game.player, ...this.game.obstacles];
+            // Combine player, eggs and obstacles into a list of colliders for the hatchling
+            let Colliders = [this.game.player, ...this.game.obstacles, ...this.game.eggs];
     
             // Check if hatchling collides with other objects
             Colliders.forEach(obj => {
@@ -457,7 +467,9 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     // Delete hatcling, keep count of dead and create spark particles
                     this.needToDelete = true;
                     this.game.hatchlings = this.game.removeGameObjects(this.game.hatchlings);
-                    this.game.deadHatchlings++;
+
+                    if (!this.game.gameOver) this.game.deadHatchlings++;
+                    
                     for (let i=0; i<5; i++){
                         this.game.particles.push(new Spark(this.game, this.collisionX, this.collisionY, "red"));
                     }   
@@ -533,36 +545,18 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
-    // ==================== Enemy Class ====================
+    // ==================== Enemy Classes ====================
     class Enemy {
         constructor(game){
             this.game = game;
     
-            // Set enemy radius and image
+            // Set enemy radius, speed and delay
             this.collisionRadius = ENEMY_RADIUS;
-            this.image = document.getElementById('enemies');
-            
-            // Set sprite frames
-            this.frameX = 0;
-            this.frameY = Math.floor(Math.random()*4);
-    
-            // Set enemy speed and delay
             this.speedX = Math.random() * 3 + ENEMY_SPEED;
             this.delay = Math.random() * this.game.width * 0.5; // How far from screen the will enemy spawn
-            
-            // Set sprite size
-            this.spriteWidth = 140;
-            this.spriteHeight = 260;
-            this.width = this.spriteWidth;
-            this.height = this.spriteHeight;
-            
-            // Set enemy location
-            this.collisionX = this.game.width + this.width + this.delay;
-            this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
-            
-            // Sprite position 
-            this.spriteX;
-            this.spriteY;
+
+            this.xFrames;
+            this.yFrames;
         }
     
         // Draws the enemy on the canvas
@@ -589,10 +583,12 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Go left
             this.collisionX -= this.speedX;
             // If reached end of the screen, spawn again
-            if (this.spriteX + this.width < 0) {
+            if (this.spriteX + this.width < 0 && !this.game.gameOver) {
                 this.collisionX = this.game.width + this.width + this.delay;
                 this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
-                this.frameY = Math.floor(Math.random()*4);
+                this.frameX = Math.floor(Math.random()* this.xFrames)
+                this.frameY = Math.floor(Math.random()* this.yFrames);
+                // console.log(this)
             }
             
             // Combine player and obstacles into a list of colliders for the enemy
@@ -609,11 +605,99 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     this.collisionX = obj.collisionX + unit_x * (radiusSum + 1);
                     this.collisionY = obj.collisionY + unit_y * (radiusSum + 1);
                 }
-            })
+            });
         }
     
     }
     
+
+    // ==================== Green Enemy Class ==================== 
+    class Greenemy extends Enemy {
+        constructor(game) {
+            super(game);
+
+            // Set image and sprite frames
+            this.image = document.getElementById('greenemies');
+            this.xFrames = 2; 
+            this.yFrames = 4;
+            this.frameX = Math.floor(Math.random() * this.xFrames);
+            this.frameY = Math.floor(Math.random() * this.yFrames);
+
+
+            // Set sprite dimensions
+            this.spriteWidth = 140;
+            this.spriteHeight = 260;
+            this.width = this.spriteWidth;
+            this.height = this.spriteHeight;
+            
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;       
+
+            // Set enemy location
+            this.collisionX = this.game.width + this.width + this.delay;
+            this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+            
+        }
+    }
+    
+    // ==================== Brown Enemy Class ==================== 
+    class Brownemy extends Enemy {
+        constructor(game) {
+            super(game);
+            // Set image and sprite frames
+            this.image = document.getElementById('brownemies');
+            this.xFrames = 2; 
+            this.yFrames = 4;
+            this.frameX = Math.floor(Math.random() * this.xFrames);
+            this.frameY = Math.floor(Math.random() * this.yFrames);
+
+            // Set sprite dimensions
+            this.spriteWidth = 183;
+            this.spriteHeight = 280;
+            this.width = this.spriteWidth;
+            this.height = this.spriteHeight;
+
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;    
+
+            // Set enemy location
+            this.collisionX = this.game.width + this.width + this.delay;
+            this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+        }
+        
+    }
+
+    // ==================== Mutant Enemy Class (Green + Brown) ==================== 
+    class Menemy extends Enemy {
+        constructor(game) {
+            super(game);
+            // Set image and sprite frames
+            this.image = document.getElementById('menemies');
+            this.xFrames = 3; 
+            this.yFrames = 3;
+            this.frameX = Math.floor(Math.random() * this.xFrames);
+            this.frameY = Math.floor(Math.random() * this.yFrames);
+
+            console.log(this.frameX, this.frameY)
+
+            // Set sprite dimensions
+            this.spriteWidth = 222;
+            this.spriteHeight = 222;
+            this.width = this.spriteWidth;
+            this.height = this.spriteHeight;
+
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;    
+
+            // Set enemy location
+            this.collisionX = this.game.width + this.width + this.delay;
+            this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+        }
+        
+    }
 
     // ==================== Game Class ====================
     class Game {
@@ -658,16 +742,39 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.gameOver = false;
             
             /// Game timer and FPS settings 
-            this.fps = 60;
+            this.fps = 69;
             this.timer = 0;
             this.interval = 1000 / this.fps;
     
     
             // _____ 👂 Keyboard Listeners 👂_____
-            // Event listener for button 'd' press to toggle debug mode
+            // Event listener for pressed keys
             window.addEventListener('keydown', (e) => {
+                // If button 'd' pressed -> toggle debug mode
                 if (e.key === 'd') this.debug = !this.debug
-            });
+                // If button 'c' pressed and in debug mode -> console.log all game objects
+                if (e.key === 'c' && this.debug) console.log(this.enemies)
+                // If button 'r' pressed -> restart game
+                if (e.key === 'r') {
+                    this.restart();
+                this.obstacles = [];
+                this.enemies = [];
+                this.eggs = [];
+                this.hatchlings = [];
+                this.particles = [];
+                this.mouse = {
+                    x: this.width * 0.5,
+                    y: this.height * 0.5,
+                    pressed: false
+                }
+
+                this.score = 0;
+                this.deadHatchlings = 0;
+                this.gameOver = false;
+                this.init();
+                }
+            }
+        );
             // _____ 👂 __________________ 👂_____
     
     
@@ -702,13 +809,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         // Render method to update and draw game elements
         render(context, deltaTime) {
             
-            // If game over - don't render (and turn off debug mode)
-            if (this.gameOver && !this.debug) {
-                return;
-            } else if (this.gameOver && this.debug) {
-                this.debug = false;
-            }
-
             // Rerender when timer reaches interval
             if (this.timer > this.interval) {
                 // Clear canvas
@@ -743,7 +843,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.timer += deltaTime;
     
             // Spawn a new egg every 'eggSpawnInterval' ms, up to MAX_EGGS
-            if (this.eggSpawnTimer > this.eggSpawnInterval && this.eggs.length < MAX_EGGS) {
+            if (!this.gameOver && this.eggSpawnTimer > this.eggSpawnInterval && this.eggs.length < MAX_EGGS) {
                 this.addEgg();
                 this.eggSpawnTimer = 0;
             } else {
@@ -759,7 +859,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             }
             context.restore();
 
-            // If you saved enough hatchlings
+            // If you saved enough hatchlings - GAME OVER !
             if (this.score >= GOAL) {
                 this.gameOver = true;
                 showFinalMessage(this, ctx, canvas, this.deadHatchlings, this.score)
@@ -778,9 +878,16 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         addEgg() {
             this.eggs.push(new Egg(this));
         }
-    
+        
+        // Add random enemies
         addEnemy(){
-            this.enemies.push(new Enemy(this));
+            let choose = Math.random()
+            if (choose <= 0.333333333)
+                this.enemies.push(new Greenemy(this));
+            else if (choose >= 0.666666666)
+                this.enemies.push(new Brownemy(this));
+            else
+                this.enemies.push(new Menemy(this));
         }
     
         removeGameObjects(objects){
@@ -788,7 +895,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             objects = objects.filter(obj => !obj.needToDelete);
             return objects
         }
-    
+        
+        restart() {
+            this.player.restart();
+        }
+
         // Initialize obstacles in the game 
         init() {
     

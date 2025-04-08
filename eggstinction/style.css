@@ -26,6 +26,14 @@ body {
     transform: translate(-50%, -50%);
 }
 
-#obstacles, #player-yellow, #player-blue, #egg, #enemies, #hatchling{
+#player-yellow, #player-blue{
+    display: none;
+}
+
+#obstacles, #egg, #hatchling {
+    display: none;
+}
+
+#greenemies, #brownemies, #menemies{
     display: none;
 }
