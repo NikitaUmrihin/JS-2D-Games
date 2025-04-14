@@ -120,7 +120,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.speedY = 0;
     
             // Modifier to control how fast the player moves towards the mouse
-            this.speedModifier = 20;
+            this.speedModifier = 10;
     
             // Differences between player and mouse
             this.dx = 0;
@@ -162,25 +162,36 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.frameX * this.spriteWidth, this.frameY * this.spriteHeight,
                 this.spriteWidth, this.spriteHeight,
                 // Image location
-                this.spriteX, this.spriteY,
+                this.spriteX, this.spriteY - 100,
                 this.width, this.height
             );
     
             if (this.game.debug) {
                 drawCircle(context, this.collisionX, this.collisionY, this.collisionRadius, 'white', 0.1);
-    
-                // Draw line
-                context.beginPath();
-                context.moveTo(this.collisionX, this.collisionY);
-                context.lineTo(this.game.mouse.x, this.game.mouse.y);
-                context.stroke();
+                
+                if(!this.game.keyboardMode){
+                    // Draw line
+                    context.beginPath();
+                    context.moveTo(this.collisionX, this.collisionY);
+                    context.lineTo(this.game.mouse.x, this.game.mouse.y);
+                    context.stroke();
+                }
             }
         }
     
         // Updates player position based on mouse movement
         update() {
-            this.dx = this.game.mouse.x - this.collisionX;
-            this.dy = this.game.mouse.y - this.collisionY;
+            if (!this.game.keyboardMode){
+                this.dx = this.game.mouse.x - this.collisionX;
+                this.dy = this.game.mouse.y - this.collisionY;
+            } else{
+                this.dx = 0;
+                this.dy = 0;
+                if (this.game.keys.ArrowUp) this.dy = -0.75*this.collisionRadius;
+                if (this.game.keys.ArrowDown) this.dy = 0.75*this.collisionRadius;
+                if (this.game.keys.ArrowLeft) this.dx =  -0.75*this.collisionRadius;
+                if (this.game.keys.ArrowRight) this.dx = 0.75*this.collisionRadius;
+            }
             
             // Calculate distance from mouse to player
             const distance = Math.sqrt(this.dx**2 + this.dy**2);
@@ -741,16 +752,25 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Initialize score and deadHatchlings to zero
             this.score = 0;
             this.deadHatchlings = 0;
-    
+            
+            
             // Mouse properties (start at canvas center)
             this.mouse = {
                 x: this.width * 0.5,
                 y: this.height * 0.5,
                 pressed: false
             };
-    
-            // Flags for debug mode and game over
+
+            // Pressed arrow keys
+            this.keys = {
+                ArrowUp: false,
+                ArrowDown: false,
+                ArrowLeft: false,
+                ArrowRight: false,
+            };
+            // Flags for debug mode, keyboard mode and game over
             this.debug = false;
+            this.keyboardMode = true;
             this.gameOver = false;
             
             /// Game timer and FPS settings 
@@ -786,36 +806,54 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.gameOver = false;
                 this.init();
                 }
-            }
-        );
+
+                if (e.key === 'k') {
+                    console.log(this.keyboardMode)
+                    this.keyboardMode = !this.keyboardMode;
+                }
+
+                if (this.keyboardMode && this.keys.hasOwnProperty(e.key)) {
+                    this.keys[e.key] = true;
+                }
+            });
+
+            
+            window.addEventListener('keyup', (e) => {
+                if (this.keyboardMode && this.keys.hasOwnProperty(e.key)) {
+                    this.keys[e.key] = false;
+                }
+            });
+            
             // _____ 👂 __________________ 👂_____
     
     
             // ______ 🐭 Mouse Listeners 🐭______
             // Event listener for mouse press
-            window.addEventListener('mousedown', (e) => {
-                // console.log("down:", e.offsetX, e.offsetY);
-                this.mouse.x = e.offsetX;
-                this.mouse.y = e.offsetY;
-                this.mouse.pressed = true;
-            });
-    
-            // Event listener for mouse release
-            window.addEventListener('mouseup', (e) => {
-                // console.log("up:", e.offsetX, e.offsetY);
-                this.mouse.x = e.offsetX;
-                this.mouse.y = e.offsetY;
-                this.mouse.pressed = false;
-            });
-    
-            // Event listener for mouse movement
-            window.addEventListener('mousemove', (e) => {
-                // console.log("moving:", e.offsetX, e.offsetY);
-                if (this.mouse.pressed) {
+            if(this.keyboardMode === false){
+                window.addEventListener('mousedown', (e) => {
+                    // console.log("down:", e.offsetX, e.offsetY);
                     this.mouse.x = e.offsetX;
                     this.mouse.y = e.offsetY;
-                }
-            });
+                    this.mouse.pressed = true;
+                });
+        
+                // Event listener for mouse release
+                window.addEventListener('mouseup', (e) => {
+                    // console.log("up:", e.offsetX, e.offsetY);
+                    this.mouse.x = e.offsetX;
+                    this.mouse.y = e.offsetY;
+                    this.mouse.pressed = false;
+                });
+        
+                // Event listener for mouse movement
+                window.addEventListener('mousemove', (e) => {
+                    // console.log("moving:", e.offsetX, e.offsetY);
+                    if (this.mouse.pressed) {
+                        this.mouse.x = e.offsetX;
+                        this.mouse.y = e.offsetY;
+                    }
+                });
+            }
             // ______ 🐭 _______________ 🐭______
         }
     
