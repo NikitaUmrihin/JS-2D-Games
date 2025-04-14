@@ -67,9 +67,9 @@ function showFinalMessage(game, context, canvas, deadHatchlings, score){
     context.fillText(msg2, game.width*0.5, game.height*0.25 + 50)
     context.strokeText(msg2, game.width*0.5, game.height*0.25 + 50);
 
-    context.font = '69px Georgia';
-    context.fillText("EGGSTINCTION", game.width*0.5, game.height*0.25 + 120)
-    context.strokeText("EGGSTINCTION", game.width*0.5, game.height*0.25 + 120);
+    context.font = '120px Georgia';
+    context.fillText("EGGSTINCTION", game.width*0.5, game.height*0.25 + 150)
+    context.strokeText("EGGSTINCTION", game.width*0.5, game.height*0.25 + 150);
 
     context.restore();            
 }
@@ -179,14 +179,16 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             }
         }
     
-        // Updates player position based on mouse movement
+        // Updates player position 
         update() {
+            // Based on mouse movement
             if (!this.game.keyboardMode){
                 this.dx = this.game.mouse.x - this.collisionX;
                 this.dy = this.game.mouse.y - this.collisionY;
             } else{
-                this.dx = 0;
-                this.dy = 0;
+                // Based on keyboard arrows
+                this.dx *= 0.2;
+                this.dy *= 0.2;
                 if (this.game.keys.ArrowUp) this.dy = -0.75*this.collisionRadius;
                 if (this.game.keys.ArrowDown) this.dy = 0.75*this.collisionRadius;
                 if (this.game.keys.ArrowLeft) this.dx =  -0.75*this.collisionRadius;
@@ -214,6 +216,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             if (this.frameX < this.maxFrames)
                 this.frameX ++;
             else this.frameX = 0;
+            
 
             if (distance > this.speedModifier) {
                 // Calculate speed (zero incase distance is undefined)
@@ -807,17 +810,19 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.init();
                 }
 
+                // If button 'd' pressed -> toggle keyboard mode
                 if (e.key === 'k') {
                     console.log(this.keyboardMode)
                     this.keyboardMode = !this.keyboardMode;
                 }
 
+                // Update pressed arrow keys
                 if (this.keyboardMode && this.keys.hasOwnProperty(e.key)) {
                     this.keys[e.key] = true;
                 }
             });
 
-            
+            // Update un-pressed arrow keys
             window.addEventListener('keyup', (e) => {
                 if (this.keyboardMode && this.keys.hasOwnProperty(e.key)) {
                     this.keys[e.key] = false;
@@ -829,31 +834,36 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     
             // ______ 🐭 Mouse Listeners 🐭______
             // Event listener for mouse press
-            if(this.keyboardMode === false){
-                window.addEventListener('mousedown', (e) => {
+            window.addEventListener('mousedown', (e) => {
+                if(this.keyboardMode === false){
                     // console.log("down:", e.offsetX, e.offsetY);
                     this.mouse.x = e.offsetX;
                     this.mouse.y = e.offsetY;
                     this.mouse.pressed = true;
-                });
-        
-                // Event listener for mouse release
-                window.addEventListener('mouseup', (e) => {
+                }
+            });
+    
+            // Event listener for mouse release
+            window.addEventListener('mouseup', (e) => {
+                if(this.keyboardMode === false){
                     // console.log("up:", e.offsetX, e.offsetY);
                     this.mouse.x = e.offsetX;
                     this.mouse.y = e.offsetY;
                     this.mouse.pressed = false;
-                });
-        
-                // Event listener for mouse movement
-                window.addEventListener('mousemove', (e) => {
+                }
+            });
+    
+            // Event listener for mouse movement
+            window.addEventListener('mousemove', (e) => {
+                if(this.keyboardMode === false){
                     // console.log("moving:", e.offsetX, e.offsetY);
                     if (this.mouse.pressed) {
                         this.mouse.x = e.offsetX;
                         this.mouse.y = e.offsetY;
                     }
-                });
-            }
+                }
+            });
+            
             // ______ 🐭 _______________ 🐭______
         }
     
