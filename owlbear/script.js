@@ -1,4 +1,4 @@
-const TOP_MARGIN = window.innerHeight *0.33;
+const TOP_MARGIN = window.innerHeight *0.2;
 
 window.addEventListener('load', function ()     // Waits for the whole page to load before running the code
 { 
@@ -15,6 +15,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     overlay.width = window.innerWidth * 0.95;
     overlay.height = window.innerHeight * 0.95;
 
+    
     // InputHandler updates game.lastKey
     class InputHandler {
         constructor(game){
@@ -24,27 +25,44 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             });
             window.addEventListener('keyup', (e) => {
                 this.game.lastKey = e.key + 'Released';
-                console.log(this.game.lastKey)
             });
         }
 
     }
 
+    // ==================== Player Class ====================
     class Player {
         constructor(game){
             this.game = game;
-            // Initialize size, location and speed
-            this.width = 100;
-            this.height = 100;
+
+            // Set image and sprites
+            this.image = document.getElementById('player');
+            this.spriteWidth = 200;
+            this.spriteHeight = 200;
+            this.frameX = 0;
+            this.frameY = 0;
+            this.maxFrame = 30;
+
+            // Set size, location and speed
+            this.width = this.spriteWidth;
+            this.height = this.spriteHeight
             this.x = this.game.width * 0.5;
             this.y = this.game.height * 0.5;
             this.speedX = 0;
             this.speedY = 0;
             this.maxSpeed = 7;
+            
         }
 
         draw(context){
-            context.fillRect(this.x, this.y, this.width, this.height)
+            // context.fillRect(this.x, this.y, this.width, this.height);
+            context.drawImage(
+                this.image,
+                this.frameX * this.spriteWidth , this.frameY * this.spriteHeight,
+                this.spriteWidth, this.spriteHeight, 
+                this.x, this.y,
+                this.width, this.height
+            );
         }
 
         setSpeed(speedX, speedY) {
@@ -53,15 +71,31 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
 
         update(){
-            // Set speed according to last key pressed
+            // Set speed and update sprite according to last key pressed
             if(this.game.lastKey == "ArrowLeftPressed") {
                 this.setSpeed(-this.maxSpeed, 0);
+                this.frameY = 3;
+            } else if (this.game.lastKey == "ArrowLeftReleased") {
+                this.setSpeed(0, 0);
+                this.frameY = 2;
             } else if (this.game.lastKey == "ArrowRightPressed") {
                 this.setSpeed(this.maxSpeed, 0);
+                this.frameY = 5;
+            } else if (this.game.lastKey == "ArrowRightReleased") {
+                this.setSpeed(0, 0);
+                this.frameY = 4;
             } else if (this.game.lastKey == "ArrowUpPressed"){
                 this.setSpeed(0, -this.maxSpeed);
+                this.frameY = 7;
+            } else if (this.game.lastKey == "ArrowUpReleased"){
+                this.setSpeed(0, 0);
+                this.frameY = 6;
             } else if (this.game.lastKey == "ArrowDownPressed") {
                 this.setSpeed(0, this.maxSpeed);
+                this.frameY = 1;
+            } else if (this.game.lastKey == "ArrowDownReleased") {
+                this.setSpeed(0, 0);
+                this.frameY = 0;
             } else {
                 this.setSpeed(0, 0);
             }
@@ -83,9 +117,17 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             } else if (this.y > this.game.height - this.height ) {
                 this.y = this.game.height - this.height;
             }
+
+            // Sprite animation
+            if(this.frameX < this.maxFrame) {
+                this.frameX++;
+            } else {
+                this.frameX = 0;
+            }
         }
     }
 
+    // ==================== Game Class ====================
     class Game {
         constructor(width, height){
             this.width = width;

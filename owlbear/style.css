@@ -69,3 +69,7 @@ canvas:hover ~ #leaves_right {
     50% {top: 56px;}
     100% {top: 50px;}
 }
+
+#player {
+    display: none;
+}
