@@ -9,6 +9,7 @@ const PLAYER_RADIUS = 30;
 const EGG_RADIUS = 45;
 const HATCHLING_RADIUS = 27;
 const ENEMY_RADIUS = 30;
+const MENEMY_RADIUS = 42;
 
 const TOP_MARGIN = window.innerHeight *0.333;
 const SECONDS_TO_HATCH = 5;
@@ -583,6 +584,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             this.xFrames;
             this.yFrames;
+            this.maxFrames;
         }
     
         // Draws the enemy on the canvas
@@ -602,6 +604,12 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     
         // Updates enemy position
         update(){
+
+            // Sprite animation
+            if (this.frameX < this.maxFrames)
+                this.frameX ++;
+            else this.frameX = 0;
+
             // Set sprite location
             this.spriteX = this.collisionX - this.width * 0.5;
             this.spriteY = this.collisionY - this.height + 40;
@@ -646,13 +654,14 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.image = document.getElementById('greenemies');
             this.xFrames = 2; 
             this.yFrames = 4;
-            this.frameX = Math.floor(Math.random() * this.xFrames);
+            this.frameX = 0;
             this.frameY = Math.floor(Math.random() * this.yFrames);
+            this.maxFrames = 38;
 
 
             // Set sprite dimensions
-            this.spriteWidth = 140;
-            this.spriteHeight = 260;
+            this.spriteWidth = 154;
+            this.spriteHeight = 238;
             this.width = this.spriteWidth;
             this.height = this.spriteHeight;
             
@@ -664,6 +673,12 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.collisionX = this.game.width + this.width + this.delay;
             this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
             
+        }
+
+        update(){
+            super.update();
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height/2 - 90;
         }
     }
     
@@ -677,6 +692,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.yFrames = 4;
             this.frameX = Math.floor(Math.random() * this.xFrames);
             this.frameY = Math.floor(Math.random() * this.yFrames);
+            this.maxFrames = 38;
 
             // Set sprite dimensions
             this.spriteWidth = 183;
@@ -691,6 +707,12 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Set enemy location
             this.collisionX = this.game.width + this.width + this.delay;
             this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+            
+        }
+        update(){
+            super.update();
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height/2 - 100;
         }
         
     }
@@ -706,7 +728,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.frameX = Math.floor(Math.random() * this.xFrames);
             this.frameY = Math.floor(Math.random() * this.yFrames);
 
-            console.log(this.frameX, this.frameY)
+            this.collisionRadius = MENEMY_RADIUS;
 
             // Set sprite dimensions
             this.spriteWidth = 222;
@@ -723,6 +745,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
         }
         
+        update(){
+            super.update();
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height/2 - 70;
+        }
     }
 
     // ==================== Game Class ====================
