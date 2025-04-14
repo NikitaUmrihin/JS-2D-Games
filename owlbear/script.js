@@ -52,6 +52,9 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.speedY = 0;
             this.maxSpeed = 7;
             
+            this.fps = 30;
+            this.frameInterval = 1000/this.fps;
+            this.frameTimer = 0;
         }
 
         draw(context){
@@ -70,34 +73,32 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.speedY = speedY;
         }
 
-        update(){
+        update(deltaTime){
             // Set speed and update sprite according to last key pressed
             if(this.game.lastKey == "ArrowLeftPressed") {
                 this.setSpeed(-this.maxSpeed, 0);
                 this.frameY = 3;
-            } else if (this.game.lastKey == "ArrowLeftReleased") {
+            } else if (this.game.lastKey == "ArrowLeftReleased" && this.speedX < 0) {
                 this.setSpeed(0, 0);
                 this.frameY = 2;
             } else if (this.game.lastKey == "ArrowRightPressed") {
                 this.setSpeed(this.maxSpeed, 0);
                 this.frameY = 5;
-            } else if (this.game.lastKey == "ArrowRightReleased") {
+            } else if (this.game.lastKey == "ArrowRightReleased" && this.speedX > 0) {
                 this.setSpeed(0, 0);
                 this.frameY = 4;
             } else if (this.game.lastKey == "ArrowUpPressed"){
-                this.setSpeed(0, -this.maxSpeed);
+                this.setSpeed(0, -this.maxSpeed * 0.6);
                 this.frameY = 7;
-            } else if (this.game.lastKey == "ArrowUpReleased"){
+            } else if (this.game.lastKey == "ArrowUpReleased" && this.speedY < 0){
                 this.setSpeed(0, 0);
                 this.frameY = 6;
             } else if (this.game.lastKey == "ArrowDownPressed") {
-                this.setSpeed(0, this.maxSpeed);
+                this.setSpeed(0, this.maxSpeed * 0.6);
                 this.frameY = 1;
-            } else if (this.game.lastKey == "ArrowDownReleased") {
+            } else if (this.game.lastKey == "ArrowDownReleased" && this.speedY > 0) {
                 this.setSpeed(0, 0);
                 this.frameY = 0;
-            } else {
-                this.setSpeed(0, 0);
             }
 
             // Update player location
@@ -119,10 +120,10 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             }
 
             // Sprite animation
-            if(this.frameX < this.maxFrame) {
-                this.frameX++;
+            if (this.frameTimer > this.frameInterval) {
+                this.frameX < this.maxFrame? this.frameX++ : this.frameX = 0;
             } else {
-                this.frameX = 0;
+                this.frameTimer += deltaTime;
             }
         }
     }
@@ -137,19 +138,23 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.player = new Player(this);
         }  
         
-        render(context) {
+        render(context, deltaTime) {
             this.player.draw(context);
-            this.player.update();
+            this.player.update(deltaTime);
         }
     }
 
     const game = new Game(canvas.width, canvas.height);
     
-    function animate(){
+    let lastTime = 0;
+
+    function animate(timeStamp){
+        const deltaTime = timeStamp - lastTime;
+        lastTime = timeStamp; 
         ctx.clearRect(0,0, canvas.width, canvas.height);
-        game.render(ctx);
+        game.render(ctx, deltaTime);
         requestAnimationFrame(animate);
     }
 
-    animate();
+    animate(0);
 });
