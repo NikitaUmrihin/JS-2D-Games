@@ -1,8 +1,9 @@
 // Constants for game settings
-const MAX_ATTEMPTS = 500;       // Max number of attempts to place obstacles
-const MAX_OBSTACLES = 5;        // Max number of obstacles in the game
-const MAX_EGGS = 10;
-const MAX_ENEMIES = 8;
+const MAX_ATTEMPTS = 500;                   // Max number of attempts to place obstacles
+const MAX_OBSTACLES = [3,4,5,6,7,8,9];      // Max number of obstacles in the game
+const MAX_EGGS = [5,6,7,8,9,10,11];
+const MAX_ENEMIES = [6,7,8,9,10,11,12];
+const MAX_LEVELS = 7;
 
 const OBSTACLE_RADIUS = 45;
 const PLAYER_RADIUS = 30;
@@ -13,8 +14,9 @@ const MENEMY_RADIUS = 42;
 
 const TOP_MARGIN = window.innerHeight *0.333;
 const SECONDS_TO_HATCH = 5;
-const ENEMY_SPEED = 2;
-const GOAL = 20;
+const ENEMY_SPEED = [1, 1.5, 2, 2.5, 3, 3.5, 4];
+const MENEMY_SPEED = [0.75, 1, 1.5, 2, 2.5, 2.75, 3];
+const GOAL = 7;
 
 const PLAYER_COLORS = ['yellow', 'blue']
 
@@ -33,7 +35,46 @@ function drawCircle(context, x, y, radius, color, opacity) {
     context.stroke()
 }
 
-// showFinalMessage tells the user if he won or lost
+
+// showNextLevelMessage tells the user he won this level
+function showNextLevelMessage(game, context, canvas, deadHatchlings, score){
+    context.save();
+    context.fillStyle = 'rgba(0,0,0,0.75)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'lightgreen';
+    context.fillStroke = 'darkgreen';
+
+    let msgs = [
+        "EGGS-CELLENT", 
+        "EGGS-CEPTIONAL", 
+        "EGGS-CLUSIVE", 
+        "EGGS-TRAORDINARY", 
+        "EGGS-TREME",
+        "EGGS-TRAVAGANZA"
+    ]
+    
+    context.lineWidth = 1;
+    context.textAlign = 'left';
+    context.fillText('SCORE: ' + score, 25, 50);
+    context.fillText("EGGSTINCT: " + deadHatchlings, canvas.width-320, 50)
+    context.textAlign = 'center';
+
+    context.font = '150px David';
+    context.fillText(msgs[game.level-1], game.width*0.5, game.height*0.25)
+    context.strokeText(msgs[game.level-1], game.width*0.5, game.height*0.25);
+
+    context.font = '80px Arial';
+    context.fillText("PRESS X", game.width*0.5, game.height*0.25 + 150)
+    context.strokeText("PRESS X", game.width*0.5, game.height*0.25 + 150);
+
+    context.font = '50px Arial';
+    context.fillText("TO CONTINUE", game.width*0.5, game.height*0.25 + 200)
+    context.strokeText("TO CONTINUE", game.width*0.5, game.height*0.25 + 200);
+
+    context.restore();            
+}
+
+// showFinalMessage tells the user if he won or lost the game
 function showFinalMessage(game, context, canvas, deadHatchlings, score){
     context.save();
     context.fillStyle = 'rgba(0,0,0,0.75)';
@@ -42,7 +83,7 @@ function showFinalMessage(game, context, canvas, deadHatchlings, score){
     let msg1;
     let msg2;
     
-    if (deadHatchlings <= 0) {
+    if (score >= deadHatchlings) {
         context.fillStyle = 'lightgreen';
         context.fillStroke = 'darkgreen';
         msg1 = "WINNER";
@@ -150,7 +191,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         restart(){
             this.collisionX = this.game.width * 0.5;
             this.collisionY = this.game.height * 0.5;
-            this.spriteX = this.collisionX - this.width * 0.5 - 100;
+            this.spriteX = this.collisionX - this.width * 0.5;
             this.spriteY = this.collisionY - this.height * 0.5;
         }
             
@@ -461,7 +502,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 // Delete hatchling, increase score and create butterfly particles
                 this.needToDelete = true;
                 this.game.hatchlings = this.game.removeGameObjects(this.game.hatchlings);
-                if (!this.game.gameOver) this.game.score++;
+                if (!this.game.gameOver && !this.game.levelWon) this.game.score++;
                 for (let i=0; i<3; i++){
                     this.game.particles.push(new Firefly(this.game, this.collisionX, this.collisionY, "yellow"));
                 }   
@@ -495,7 +536,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     this.needToDelete = true;
                     this.game.hatchlings = this.game.removeGameObjects(this.game.hatchlings);
 
-                    if (!this.game.gameOver) this.game.deadHatchlings++;
+                    if (!this.game.gameOver && !this.game.levelWon) this.game.deadHatchlings++;
                     
                     for (let i=0; i<5; i++){
                         this.game.particles.push(new Spark(this.game, this.collisionX, this.collisionY, "red"));
@@ -579,7 +620,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     
             // Set enemy radius, speed and delay
             this.collisionRadius = ENEMY_RADIUS;
-            this.speedX = Math.random() * 3 + ENEMY_SPEED;
+            this.speedX = Math.random() * 3 + ENEMY_SPEED[this.game.level-1];
             this.delay = Math.random() * this.game.width * 0.5; // How far from screen the will enemy spawn
 
             this.xFrames;
@@ -617,7 +658,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             // Go left
             this.collisionX -= this.speedX;
             // If reached end of the screen, spawn again
-            if (this.spriteX + this.width < 0 && !this.game.gameOver) {
+            if (this.spriteX + this.width < 0 && !this.game.gameOver && !this.game.levelWon) {
                 this.collisionX = this.game.width + this.width + this.delay;
                 this.collisionY = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
                 this.frameX = Math.floor(Math.random()* this.xFrames)
@@ -728,7 +769,9 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.frameX = Math.floor(Math.random() * this.xFrames);
             this.frameY = Math.floor(Math.random() * this.yFrames);
 
+            // Set speed and radius
             this.collisionRadius = MENEMY_RADIUS;
+            this.speedX = Math.random() * 3 + MENEMY_SPEED[this.game.level-1];
 
             // Set sprite dimensions
             this.spriteWidth = 222;
@@ -761,9 +804,13 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             
             // Create a player instance
             this.player = new Player(this);
-            
+
+            // Initialize level variables
+            this.level = 1;
+            this.levelWon = false;
+
             // Initialize obstacles array
-            this.numOfObstacles = MAX_OBSTACLES;
+            this.numOfObstacles = MAX_OBSTACLES[this.level-1];
             this.obstacles = [];
     
             // Initialize eggs array and eggs spawn timer
@@ -820,21 +867,18 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 // If button 'r' pressed -> restart game
                 if (e.key === 'r') {
                     this.restart();
-                this.obstacles = [];
-                this.enemies = [];
-                this.eggs = [];
-                this.hatchlings = [];
-                this.particles = [];
-                this.mouse = {
-                    x: this.width * 0.5,
-                    y: this.height * 0.5,
-                    pressed: false
+                    this.level = 1;
+                    this.score = 0;
+                    this.deadHatchlings = 0;
+                    this.init();
                 }
-
-                this.score = 0;
-                this.deadHatchlings = 0;
-                this.gameOver = false;
-                this.init();
+                if (e.key === 'x') {
+                    if (this.levelWon){
+                        this.levelWon = false;
+                        this.level += 1;
+                        this.restart();
+                        this.init();
+                    }
                 }
 
                 // If button 'd' pressed -> toggle keyboard mode
@@ -931,7 +975,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.timer += deltaTime;
     
             // Spawn a new egg every 'eggSpawnInterval' ms, up to MAX_EGGS
-            if (!this.gameOver && this.eggSpawnTimer > this.eggSpawnInterval && this.eggs.length < MAX_EGGS) {
+            if (!this.gameOver && !this.levelWon && this.eggSpawnTimer > this.eggSpawnInterval && this.eggs.length < MAX_EGGS[this.level-1]) {
                 this.addEgg();
                 this.eggSpawnTimer = 0;
             } else {
@@ -942,15 +986,23 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             context.save();
             context.textAlign = 'left';
             context.fillText('SCORE: ' + this.score, 25, 50);
+            context.fillText('LEVEL: ' + this.level, 25, 150);
             if (this.debug){
                 context.fillText("EGGSTINCT: " + this.deadHatchlings, this.canvas.width-320, 50)
             }
             context.restore();
 
             // If you saved enough hatchlings - GAME OVER !
-            if (this.score >= GOAL) {
-                this.gameOver = true;
-                showFinalMessage(this, ctx, canvas, this.deadHatchlings, this.score)
+            if (this.score >= this.level * GOAL) {
+                if (this.level === MAX_LEVELS){
+                    this.gameOver = true;
+                    showFinalMessage(this, ctx, canvas, this.deadHatchlings, this.score);
+                }
+                else{
+                    this.levelWon = true;
+                    showNextLevelMessage(this, ctx, canvas, this.deadHatchlings, this.score);
+                }
+
             }
         }
     
@@ -996,12 +1048,26 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         
         restart() {
             this.player.restart();
+            this.numOfObstacles = MAX_OBSTACLES[this.level-1];
+            this.obstacles = [];
+            this.enemies = [];
+            this.eggs = [];
+            this.hatchlings = [];
+            this.particles = [];
+            this.mouse = {
+                x: this.width * 0.5,
+                y: this.height * 0.5,
+                pressed: false
+            }
+            this.gameOver = false;
+            this.levelWon = false;
+
         }
 
         // Initialize obstacles in the game 
         init() {
     
-            for (let i=0; i<MAX_ENEMIES; i++){
+            for (let i=0; i<MAX_ENEMIES[this.level-1]; i++){
                 this.addEnemy();
             }
     
