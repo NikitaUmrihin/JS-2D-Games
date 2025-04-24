@@ -128,6 +128,69 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
+    // ==================== Obstacle Classes ====================
+    class Obstacle {
+        constructor(game) {
+            this.game = game;
+            this.image;
+        }
+
+        draw(context) {
+            context.drawImage(
+                this.image, 
+                this.x, 
+                this.y, 
+                this.width,
+                this.height,
+            );
+        }
+    }
+
+    class Bush extends Obstacle {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('bush');
+            this.imageWidth = 216;
+            this.imageHeight = 100;
+            this.width = this.imageWidth;
+            this.height = this.imageHeight;
+
+            this.x = Math.random() * this.game.width - this.width;
+            this.y = TOP_MARGIN + Math.random() * (this.game.height - this.height - TOP_MARGIN);
+        }
+    }
+    
+    class Grass extends Obstacle {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('grass');
+            this.imageWidth = 103;
+            this.imageHeight = 182;
+            this.width = this.imageWidth;
+            this.height = this.imageHeight;
+
+            this.x = Math.random() * this.game.width - this.width;
+            this.y = TOP_MARGIN + Math.random() * (this.game.height - this.height - TOP_MARGIN);
+        }
+    }
+
+    class Plant extends Obstacle {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('plant');
+            this.imageWidth = 212;
+            this.imageHeight = 118;
+            this.width = this.imageWidth;
+            this.height = this.imageHeight;
+
+            this.x = Math.random() * this.game.width - this.width;
+            this.y = TOP_MARGIN + Math.random() * (this.game.height - this.height - TOP_MARGIN);
+        }
+    }
+
     // ==================== Game Class ====================
     class Game {
         constructor(width, height){
@@ -136,16 +199,32 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.lastKey = undefined;
             this.input = new InputHandler(this);
             this.player = new Player(this);
+
+            this.numberOfPlants = 10;
+            this.plants = [];
         }  
         
         render(context, deltaTime) {
             this.player.draw(context);
             this.player.update(deltaTime);
+            this.plants.forEach(plant => plant.draw(context));
+        }
+
+        init(){
+            for(let i=0; i<this.numberOfPlants; i++){
+                const num = Math.random();
+                if(num < 0.333)
+                    this.plants.push(new Bush(this));
+                else if(num < 0.666)
+                    this.plants.push(new Plant(this));
+                else this.plants.push(new Grass(this));
+            }
         }
     }
 
     const game = new Game(canvas.width, canvas.height);
-    
+    game.init();
+
     let lastTime = 0;
 
     function animate(timeStamp){
