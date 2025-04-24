@@ -1,5 +1,21 @@
 const TOP_MARGIN = window.innerHeight *0.2;
 
+const ENEMY_SPEED = 3;
+
+
+// Draw circle
+function drawCircle(context, x, y, radius, color, opacity) {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    // save() & restore() allows us to apply globalAlpha only to fill()
+    context.save();
+    context.fillStyle = color;
+    context.globalAlpha = opacity;
+    context.fill()
+    context.restore();
+    context.stroke()
+}
+
 window.addEventListener('load', function ()     // Waits for the whole page to load before running the code
 { 
     // Get the canvas and overlay elements
@@ -12,8 +28,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     // Set canvas and overlay dimensions
     canvas.width = window.innerWidth * 0.95;
     canvas.height = window.innerHeight * 0.95;
-    overlay.width = window.innerWidth * 0.95;
-    overlay.height = window.innerHeight * 0.95;
+    // overlay.width = window.innerWidth * 0.95;
+    // overlay.height = window.innerHeight * 0.95;
 
     
     // InputHandler updates game.lastKey
@@ -191,6 +207,154 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
+    // ==================== Enemy Classes ====================
+    class Enemy {
+        constructor(game) {
+            this.game = game;
+            
+            // Set enemy speed and delay
+            this.speedX = Math.random() * 3 + ENEMY_SPEED;
+            this.delay = Math.random() * this.game.width * 0.5; // How far from screen the will enemy spawn
+            
+            this.image;
+        
+            this.stop;
+        }
+
+        // Draws the enemy on the canvas
+        draw(context) {
+
+            context.drawImage(
+                this.image,
+                this.frameX*this.width, 0,
+                this.width, this.height,
+                this.spriteX, this.spriteY,
+                this.width, this.height
+            );
+
+
+        }
+
+        // Updates enemy position
+        update() {
+            // Set sprite location
+            this.spriteX = this.x - this.width * 0.5;
+            this.spriteY = this.y - this.height;
+
+
+            // Go left / right
+            if(this.side == 'right' && !this.stop)
+                this.x -= this.speedX;
+            if(this.side == 'left' && !this.stop)
+                this.x += this.speedX;
+
+            // If reached shooting position - stop
+            if (this.side == 'right' && this.spriteX + this.width*0.8 < this.game.width ) {
+                this.stop = true;
+            }
+            if (this.side == 'left' && this.spriteX + this.width >  this.width*0.8) {
+                this.stop = true;
+            }
+
+        }
+    }
+
+    class Billy extends Enemy {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('billy1');
+
+            // Set sprite dimensions    
+            this.spriteWidth = 251;
+            this.spirteHeight = 193;
+            this.width = this.spriteWidth;
+            this.height = this.spirteHeight;
+
+            this.frameX = 0;
+            this.frameY = 0;
+
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;    
+
+            this.side = Math.random() < 0.5 ? 'left' : 'right';
+
+
+            if (this.side == 'left') {
+                this.x = - this.delay;
+                this.frameX = 0;        
+            }
+            if (this.side == 'right') {
+                this.x = this.game.width + this.width + this.delay;
+                this.frameX = 1;        
+            }
+            this.y = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+        }
+
+        draw(context){
+            super.draw(context);
+            if (this.side=='left')
+                drawCircle(context, this.x+120, this.y+30, 20, 'red', 0.3);
+            else    
+                drawCircle(context, this.x-120, this.y+30, 20, 'red', 0.3);
+        }
+
+        update(){
+            super.update();
+            this.spriteX = this.x - this.width * 0.5;
+            this.spriteY = this.y - this.height/2;
+            
+        }
+    }
+    class BabyBilly extends Enemy {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('billy5');
+
+            // Set sprite dimensions    
+            this.spriteWidth = 497*0.5;
+            this.spirteHeight = 143;
+            this.width = this.spriteWidth;
+            this.height = this.spirteHeight;
+
+            this.frameX = 0;
+            this.frameY = 0;
+
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;    
+
+            this.side = Math.random() < 0.5 ? 'left' : 'right';
+
+
+            if (this.side == 'left') {
+                this.x = - this.delay;
+                this.frameX = 0;        
+            }
+            if (this.side == 'right') {
+                this.x = this.game.width + this.width + this.delay;
+                this.frameX = 1;        
+            }
+            this.y = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+        }
+        
+        draw(context){
+            super.draw(context);
+            if (this.side=='left')
+                drawCircle(context, this.x+120, this.y+20, 15, 'red', 0.3);
+            else    
+                drawCircle(context, this.x-120, this.y+20, 15, 'red', 0.3);
+        }
+
+        update(){
+            super.update();
+            this.spriteX = this.x - this.width * 0.5;
+            this.spriteY = this.y - this.height/2;
+        }
+    }
+
     // ==================== Game Class ====================
     class Game {
         constructor(width, height){
@@ -202,12 +366,17 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             this.numberOfPlants = 10;
             this.plants = [];
+            
+            this.maxEnemies = 5;
+            this.enemies = [];
         }  
         
         render(context, deltaTime) {
             this.player.draw(context);
             this.player.update(deltaTime);
             this.plants.forEach(plant => plant.draw(context));
+            this.enemies.forEach(enemy => enemy.draw(context));
+            this.enemies.forEach(enemy => enemy.update(context));
         }
 
         init(){
@@ -218,7 +387,16 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 else if(num < 0.666)
                     this.plants.push(new Plant(this));
                 else this.plants.push(new Grass(this));
+                
+                if(i < this.maxEnemies){
+                    if (num<0.5)
+                        this.enemies.push(new Billy(this));
+                    else
+                        this.enemies.push(new BabyBilly(this));
+
+                }
             }
+
         }
     }
 

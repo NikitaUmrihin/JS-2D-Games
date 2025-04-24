@@ -70,6 +70,6 @@ canvas:hover ~ #leaves_right {
     100% {top: 50px;}
 }
 
-#player, #bush, #plant, #grass {
+#player, #bush, #plant, #grass, #billy1, #billy5, #billy7 {
     display: none;
 }
