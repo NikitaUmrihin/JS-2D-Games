@@ -268,12 +268,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.bulletFrameX = 1;        
             }
             this.y = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
-            this.gunY = this.y+30;
-
-            this.bulletX = this.gunX;
-            this.bulletY = this.gunY;
-            
-            
+           
         }
 
         // Draws the enemy on the canvas
@@ -393,15 +388,22 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.frameY = 0;
             this.yFrames = 7;
 
-            this.damage = 50;
+            this.damage = 75;
 
             this.respawn();
         }
 
+        respawn(){
+            super.respawn();
+            this.gunY = this.y+30;
+
+            this.bulletX = this.gunX;
+            this.bulletY = this.gunY;
+        }
         draw(context){
             super.draw(context);
             if (this.game.debug){
-                drawCircle(context, this.gunX, this.gunY, 15, 'red', 0.1);
+                drawCircle(context, this.gunX, this.gunY, 15, 'red', 0.5);
 
                 drawCircle(context, this.bulletX, this.bulletY, 3, "white", 1);
                 drawCircle(context, this.bulletX, this.bulletY+this.bulletHeight, 3, "white", 1);
@@ -424,6 +426,140 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         }
     }
+
+
+    class BillyBoy extends Enemy {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('billy2');
+            this.bulletImage = document.getElementById('bullet1');
+
+            // Set sprites dimensions    
+            this.spriteWidth = 282;
+            this.spirteHeight = 204;
+            this.width = this.spriteWidth;
+            this.height = this.spirteHeight;
+            this.bulletWidth = 32;
+            this.bulletHeight = 30;
+
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;
+
+            // Sprite frames
+            this.frameX = 0;
+            this.frameY = 0;
+            this.yFrames = 7;
+
+            this.damage = 50;
+            this.speedX *= 1.25;
+
+            this.respawn();
+        }
+
+        respawn(){
+            super.respawn();
+            this.gunY = this.y+30;
+
+            this.bulletX = this.gunX;
+            this.bulletY = this.gunY;
+        }
+
+        draw(context){
+            super.draw(context);
+            if (this.game.debug){
+                drawCircle(context, this.gunX, this.gunY, 15, 'red', 0.5);
+
+                drawCircle(context, this.bulletX, this.bulletY, 3, "white", 1);
+                drawCircle(context, this.bulletX, this.bulletY+this.bulletHeight, 3, "white", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY, 3, "black", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY+this.bulletHeight, 3, "black", 1);
+            }
+        }
+
+        update(){
+            super.update();
+
+            this.spriteX = this.x - this.width * 0.5;
+            this.spriteY = this.y - this.height/2;
+            this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
+
+            if(this.bulletGone){
+                this.bulletX = this.gunX;
+                this.bulletY = this.gunY;
+            }
+
+        }
+    }
+
+
+    class BabyBillyBoy extends Enemy {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('billy3');
+            this.bulletImage = document.getElementById('bullet2');
+
+            // Set sprites dimensions    
+            this.spriteWidth = 278;
+            this.spirteHeight = 145;
+            this.width = this.spriteWidth;
+            this.height = this.spirteHeight;
+            this.bulletWidth = 28;
+            this.bulletHeight = 26;
+
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;
+
+            // Sprite frames
+            this.frameX = 0;
+            this.frameY = 0;
+            this.yFrames = 7;
+
+            this.damage = 25;
+            this.speedX *= 1.5;
+
+            this.respawn();
+        }
+
+        respawn(){
+            super.respawn();
+            this.gunY = this.y+15;
+
+            this.bulletX = this.gunX;
+            this.bulletY = this.gunY;
+        }
+
+        draw(context){
+            super.draw(context);
+            if (this.game.debug){
+                drawCircle(context, this.gunX, this.gunY, 10, 'red', 0.5);
+
+                drawCircle(context, this.bulletX, this.bulletY, 3, "white", 1);
+                drawCircle(context, this.bulletX, this.bulletY+this.bulletHeight, 3, "white", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY, 3, "black", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY+this.bulletHeight, 3, "black", 1);
+            }
+        }
+
+        update(){
+            super.update();
+
+            this.spriteX = this.x - this.width * 0.5;
+            this.spriteY = this.y - this.height/2;
+            this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
+
+            if(this.bulletGone){
+                this.bulletX = this.gunX;
+                this.bulletY = this.gunY;
+            }
+
+        }
+    }
+
+
     // ==================== FX Classes ====================
     class FX {
         constructor(game, x, y, color) {
@@ -492,7 +628,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             this.gameObjects = [];
             
-            this.debug = false;
+            this.debug = true;
         }  
 
         removeGameObjects(objects){
@@ -574,7 +710,12 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 else this.plants.push(new Grass(this));
                 
                 if(i < this.maxEnemies){
+                    if(num < 0.33333)
                         this.enemies.push(new Billy(this));
+                    else if(num < 0.666)
+                        this.enemies.push(new BabyBillyBoy(this));
+                    else
+                        this.enemies.push(new BillyBoy(this));
             
                 }
             }
