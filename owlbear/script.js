@@ -214,19 +214,46 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             
             // Set enemy speed and delay
             this.speedX = Math.random() * 3 + ENEMY_SPEED;
-            this.delay = Math.random() * this.game.width * 0.5; // How far from screen the will enemy spawn
+            this.delay = Math.random() * this.game.width * 0.75; // How far from screen the will enemy spawn
             
             this.image;
-        
+            this.yFrames;
+                        
+            // Enemy + gun location
+            this.x;
+            this.y;
+            this.gunX;
+            this.gunY;
+
+            // Enemy boolean flags
             this.stop;
+            this.shot;
         }
+
+        respawn(){
+            this.side = Math.random() < 0.5 ? 'left' : 'right';
+            console.log("respawn -> ", this.side)
+            this.shot = false;
+            this.stop = false;
+            
+            if (this.side == 'left') {
+                this.x = - this.delay;
+                this.frameX = 0;        
+            }
+            if (this.side == 'right') {
+                this.x = this.game.width + this.width + this.delay;
+                this.frameX = 1;        
+            }
+            this.y = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+            this.gunY = this.y+30;
+        }
+
 
         // Draws the enemy on the canvas
         draw(context) {
-
             context.drawImage(
                 this.image,
-                this.frameX*this.width, 0,
+                this.frameX*this.width, this.frameY*this.height,
                 this.width, this.height,
                 this.spriteX, this.spriteY,
                 this.width, this.height
@@ -241,19 +268,45 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height;
 
-
             // Go left / right
-            if(this.side == 'right' && !this.stop)
+            if(this.side == 'right' && !this.stop && !this.shot)
                 this.x -= this.speedX;
-            if(this.side == 'left' && !this.stop)
+            else if(this.side == 'left' && !this.stop && !this.shot)
                 this.x += this.speedX;
-
+            else if(this.side == 'right' && !this.stop && this.shot)
+                this.x += this.speedX;
+            else if(this.side == 'left' && !this.stop && this.shot)
+                this.x -= this.speedX;
+            
+            
             // If reached shooting position - stop
-            if (this.side == 'right' && this.spriteX + this.width*0.8 < this.game.width ) {
-                this.stop = true;
+            if(!this.shot) {
+                if(this.side == 'left' && this.spriteX + this.width >  this.width*0.8 || this.side == 'right' && this.spriteX + this.width*0.8 < this.game.width){
+                    this.stop = true;
+                }
             }
-            if (this.side == 'left' && this.spriteX + this.width >  this.width*0.8) {
-                this.stop = true;
+
+            // Shoot when reaching position
+            if (this.stop == true && !this.shot) {
+                if (this.frameY < this.yFrames)
+                    this.frameY ++;
+                else {
+                    this.frameY = 0;
+                    console.log("shot")
+                    this.shot = true;
+                    this.stop = false;
+                } 
+            }
+
+            // Respawn after going out of screen
+            if (this.shot) {
+                if (this.side == 'left' && this.spriteX + this.width < 0 ) {
+                    this.respawn();
+                }
+                if (this.side == 'right' && this.spriteX > this.game.width){
+                    this.respawn();
+
+                }
             }
 
         }
@@ -266,136 +319,34 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.image = document.getElementById('billy1');
 
             // Set sprite dimensions    
-            this.spriteWidth = 251;
-            this.spirteHeight = 193;
+            this.spriteWidth = 295;
+            this.spirteHeight = 200;
             this.width = this.spriteWidth;
             this.height = this.spirteHeight;
 
             this.frameX = 0;
             this.frameY = 0;
 
+            this.yFrames = 7;
+
             // Sprite position 
             this.spriteX;
             this.spriteY;    
 
-            this.side = Math.random() < 0.5 ? 'left' : 'right';
-
-
-            if (this.side == 'left') {
-                this.x = - this.delay;
-                this.frameX = 0;        
-            }
-            if (this.side == 'right') {
-                this.x = this.game.width + this.width + this.delay;
-                this.frameX = 1;        
-            }
-            this.y = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
+            this.respawn();
+            
         }
 
         draw(context){
             super.draw(context);
-            if (this.side=='left')
-                drawCircle(context, this.x+120, this.y+30, 20, 'red', 0.3);
-            else    
-                drawCircle(context, this.x-120, this.y+30, 20, 'red', 0.3);
+            drawCircle(context, this.gunX, this.gunY, 15, 'red', 0.1);
         }
 
         update(){
             super.update();
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height/2;
-            
-        }
-    }
-    class BabyBilly extends Enemy {
-        constructor(game) {
-            super(game);
-            // this.game = game;
-            this.image = document.getElementById('billy5');
-
-            // Set sprite dimensions    
-            this.spriteWidth = 497*0.5;
-            this.spirteHeight = 143;
-            this.width = this.spriteWidth;
-            this.height = this.spirteHeight;
-
-            this.frameX = 0;
-            this.frameY = 0;
-
-            // Sprite position 
-            this.spriteX;
-            this.spriteY;    
-
-            this.side = Math.random() < 0.5 ? 'left' : 'right';
-
-
-            if (this.side == 'left') {
-                this.x = - this.delay;
-                this.frameX = 0;        
-            }
-            if (this.side == 'right') {
-                this.x = this.game.width + this.width + this.delay;
-                this.frameX = 1;        
-            }
-            this.y = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
-        }
-        
-        draw(context){
-            super.draw(context);
-            if (this.side=='left')
-                drawCircle(context, this.x+120, this.y+20, 15, 'red', 0.3);
-            else    
-                drawCircle(context, this.x-120, this.y+20, 15, 'red', 0.3);
-        }
-
-        update(){
-            super.update();
-            this.spriteX = this.x - this.width * 0.5;
-            this.spriteY = this.y - this.height/2;
-        }
-    }
-
-    // ==================== Game Class ====================
-    class Game {
-        constructor(width, height){
-            this.width = width;
-            this.height = height;
-            this.lastKey = undefined;
-            this.input = new InputHandler(this);
-            this.player = new Player(this);
-
-            this.numberOfPlants = 10;
-            this.plants = [];
-            
-            this.maxEnemies = 5;
-            this.enemies = [];
-        }  
-        
-        render(context, deltaTime) {
-            this.player.draw(context);
-            this.player.update(deltaTime);
-            this.plants.forEach(plant => plant.draw(context));
-            this.enemies.forEach(enemy => enemy.draw(context));
-            this.enemies.forEach(enemy => enemy.update(context));
-        }
-
-        init(){
-            for(let i=0; i<this.numberOfPlants; i++){
-                const num = Math.random();
-                if(num < 0.333)
-                    this.plants.push(new Bush(this));
-                else if(num < 0.666)
-                    this.plants.push(new Plant(this));
-                else this.plants.push(new Grass(this));
-                
-                if(i < this.maxEnemies){
-                    if (num<0.5)
-                        this.enemies.push(new Billy(this));
-                    else
-                        this.enemies.push(new BabyBilly(this));
-
-                }
-            }
+            this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
 
         }
     }
