@@ -218,16 +218,20 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             
             this.image;
             this.yFrames;
-                        
-            // Enemy + gun location
+            
+            // Enemy + gun position
             this.x;
             this.y;
             this.gunX;
             this.gunY;
 
+            this.bulletX;
+            this.bulletY;
+
             // Enemy boolean flags
             this.stop;
             this.shot;
+            this.bulletGone;
         }
 
         respawn(){
@@ -235,22 +239,29 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             console.log("respawn -> ", this.side)
             this.shot = false;
             this.stop = false;
+            this.bulletGone = false;
             
             if (this.side == 'left') {
                 this.x = - this.delay;
+                this.gunX = this.x+100;
                 this.frameX = 0;        
+                this.bulletFrameX = 0;        
             }
             if (this.side == 'right') {
                 this.x = this.game.width + this.width + this.delay;
+                this.gunX = this.x-100;
                 this.frameX = 1;        
+                this.bulletFrameX = 1;        
             }
             this.y = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
             this.gunY = this.y+30;
+            
+            
         }
-
 
         // Draws the enemy on the canvas
         draw(context) {
+
             context.drawImage(
                 this.image,
                 this.frameX*this.width, this.frameY*this.height,
@@ -259,8 +270,19 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.width, this.height
             );
 
+            if (this.shot){
 
+                context.drawImage(
+                    this.bulletImage,
+                    this.bulletFrameX*this.bulletWidth,0,
+                    this.bulletWidth, this.bulletHeight,
+                    this.bulletX, this.bulletY, 
+                    this.bulletWidth, this.bulletHeight,
+                );
+            
+            }
         }
+
 
         // Updates enemy position
         update() {
@@ -273,9 +295,10 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.x -= this.speedX;
             else if(this.side == 'left' && !this.stop && !this.shot)
                 this.x += this.speedX;
-            else if(this.side == 'right' && !this.stop && this.shot)
+
+            else if(this.side == 'right' && this.bulletGone)
                 this.x += this.speedX;
-            else if(this.side == 'left' && !this.stop && this.shot)
+            else if(this.side == 'left' && this.bulletGone)
                 this.x -= this.speedX;
             
             
@@ -284,6 +307,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 if(this.side == 'left' && this.spriteX + this.width >  this.width*0.8 || this.side == 'right' && this.spriteX + this.width*0.8 < this.game.width){
                     this.stop = true;
                 }
+        
             }
 
             // Shoot when reaching position
@@ -295,20 +319,44 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     console.log("shot")
                     this.shot = true;
                     this.stop = false;
+                    this.bulletX = this.side=='left' ? this.gunX : this.gunX - this.bulletWidth;
+                    this.bulletY = this.gunY - 15;
                 } 
+                
             }
+            
 
             // Respawn after going out of screen
             if (this.shot) {
-                if (this.side == 'left' && this.spriteX + this.width < 0 ) {
-                    this.respawn();
-                }
-                if (this.side == 'right' && this.spriteX > this.game.width){
-                    this.respawn();
+                
+                console.log(this.bulletX)
 
-                }
-            }
+                if (this.side == 'left'){ 
+                    
+                    this.bulletX += 1.5*this.speedX;
 
+                    if(this.bulletX > this.game.width)
+                        this.bulletGone = true
+
+                    if (this.spriteX + this.width < 0 ) {
+                        this.respawn();
+                    }
+                }
+
+
+                if (this.side == 'right'){
+
+                    this.bulletX -= 1.5*this.speedX;
+
+                    if(this.bulletX + this.bulletWidth < 0)
+                        this.bulletGone = true;
+                    
+                    if(this.spriteX > this.game.width){
+                        this.respawn();
+    
+                    }
+                }  
+            }  
         }
     }
 
@@ -317,12 +365,16 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             super(game);
             // this.game = game;
             this.image = document.getElementById('billy1');
+            this.bulletImage = document.getElementById('bullet1');
 
-            // Set sprite dimensions    
+            // Set sprites dimensions    
             this.spriteWidth = 295;
             this.spirteHeight = 200;
             this.width = this.spriteWidth;
             this.height = this.spirteHeight;
+
+            this.bulletWidth = 32;
+            this.bulletHeight = 30;
 
             this.frameX = 0;
             this.frameY = 0;
@@ -334,7 +386,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.spriteY;    
 
             this.respawn();
-            
         }
 
         draw(context){
@@ -344,10 +395,53 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         update(){
             super.update();
+
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height/2;
             this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
 
+        }
+    }
+
+
+    // ==================== Game Class ====================
+    class Game {
+        constructor(width, height){
+            this.width = width;
+            this.height = height;
+            this.lastKey = undefined;
+            this.input = new InputHandler(this);
+            this.player = new Player(this);
+
+            this.numberOfPlants = 10;
+            this.plants = [];
+            
+            this.maxEnemies = 10;
+            this.enemies = [];
+        }  
+        
+        render(context, deltaTime) {
+            this.player.draw(context);
+            this.player.update(deltaTime);
+            this.plants.forEach(plant => plant.draw(context));
+            this.enemies.forEach(enemy => enemy.draw(context));
+            this.enemies.forEach(enemy => enemy.update(context));
+        }
+
+        init(){
+            for(let i=0; i<this.numberOfPlants; i++){
+                const num = Math.random();
+                if(num < 0.333)
+                    this.plants.push(new Bush(this));
+                else if(num < 0.666)
+                    this.plants.push(new Plant(this));
+                else this.plants.push(new Grass(this));
+                
+                if(i < this.maxEnemies){
+                        this.enemies.push(new Billy(this));
+            
+                }
+            }
         }
     }
 

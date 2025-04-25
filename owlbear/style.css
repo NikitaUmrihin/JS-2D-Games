@@ -77,3 +77,6 @@ canvas:hover ~ #leaves_right {
 #billy1, #billy2, #billy3, #billy4, #billy5 {
     display: none;
 }
+#bullet1, #bullet2, #bullet3, #bullet4, #bullet5 {
+    display: none;
+}
