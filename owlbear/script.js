@@ -424,7 +424,54 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         }
     }
+    // ==================== FX Classes ====================
+    class FX {
+        constructor(game, x, y, color) {
+            this.game = game;
+            this.x = x;
+            this.y = y;
+            this.color = color;
+    
+            // Randomize radius, speed and velocity angle
+            this.radius = Math.floor(Math.random() * 10 + 5)
+            this.speedX = Math.random() * 6 - 3;
+            this.speedY = Math.random() * 2 + 0.5;
+            this.va = Math.random() * 0.1 + 0.01;
+    
+            // Initialize angle and deletion flag
+            this.angle = 0;
+            this.needToDelete = false;
+    
+        }
+    
+        // Draws the fx on the canvas
+        draw(context){
+            context.save();
+            context.fillStyle = this.color;
+            drawCircle(context, this.x, this.y, this.radius, this.color, 0.75);
+            context.restore();
+        }
+    
+    }
 
+    class Blood extends FX {
+        update(){
+            // Give the fx downward circular motion
+            this.angle += this.va * 0.5;
+            this.x += Math.sin(this.angle) * this.speedX;
+            this.y += Math.cos(this.angle) * this.speedY + this.speedY * 0.2;
+    
+            // Make the drops smaller
+            if (this.radius > 0.1) 
+                this.radius -= 0.05;
+            
+            // Make drops dissapear when they are small enough
+            if (this.radius < 0.2){
+                this.needToDelete = true;
+                this.game.fx = this.game.removeGameObjects(this.game.fx);
+            }
+        }
+    }
 
     // ==================== Game Class ====================
     class Game {
@@ -441,10 +488,17 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.maxEnemies = 5;
             this.enemies = [];
 
+            this.fx = [];
+
             this.gameObjects = [];
             
             this.debug = false;
         }  
+
+        removeGameObjects(objects){
+            objects = objects.filter(obj => !obj.needToDelete);
+            return objects
+        }
 
         // Check if enemy hit the player
         checkShot(enemy) {
@@ -456,6 +510,9 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     if(enemy.bulletX <= (this.player.x+this.player.width)*0.92 && enemy.bulletX+enemy.bulletWidth >= this.player.x) {
                         this.player.health -= enemy.damage;
                         enemy.bulletGone = true;
+                        for (let i=0; i<5; i++){
+                            this.fx.push(new Blood(this, enemy.bulletX, enemy.bulletY, "red"));
+                        }
                     }
                 }
                 else {
@@ -463,6 +520,9 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     if(enemy.bulletX+enemy.bulletWidth >= this.player.x+this.player.width*0.08 && enemy.bulletX+enemy.bulletWidth <= this.player.x+this.player.width) {
                         this.player.health -= enemy.damage;
                         enemy.bulletGone = true;
+                        for (let i=0; i<5; i++){
+                            this.fx.push(new Blood(this, enemy.bulletX, enemy.bulletY, "red"));
+                        }
                     }
                 }
             }
@@ -480,8 +540,13 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 obj.update(deltaTime);
             })
 
-            this.enemies.forEach(enemy => enemy.draw(context));
+            this.fx.forEach(fx => {
+                fx.draw(context);
+                fx.update(context);
+            });
+
             this.enemies.forEach(enemy => {
+                enemy.draw(context);
                 enemy.update(context);
                 this.checkShot(enemy);
             });
