@@ -2,6 +2,9 @@ const TOP_MARGIN = window.innerHeight *0.2;
 
 const ENEMY_SPEED = 3;
 
+const PLAYER_HEALTH = 1000;
+
+
 
 // Draw circle
 function drawCircle(context, x, y, radius, color, opacity) {
@@ -13,7 +16,7 @@ function drawCircle(context, x, y, radius, color, opacity) {
     context.globalAlpha = opacity;
     context.fill()
     context.restore();
-    context.stroke()
+    context.stroke();
 }
 
 window.addEventListener('load', function ()     // Waits for the whole page to load before running the code
@@ -59,7 +62,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.frameY = 0;
             this.maxFrame = 30;
 
-            // Set size, location and speed
+            // Set image size, location, speed and health
             this.width = this.spriteWidth;
             this.height = this.spriteHeight
             this.x = this.game.width * 0.5;
@@ -67,6 +70,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.speedX = 0;
             this.speedY = 0;
             this.maxSpeed = 7;
+            this.health = PLAYER_HEALTH;
             
             this.fps = 30;
             this.frameInterval = 1000/this.fps;
@@ -82,6 +86,13 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.x, this.y,
                 this.width, this.height
             );
+
+            if(this.game.debug){
+                drawCircle(context, this.x, this.y+17, 7, "black", 1);
+                drawCircle(context, this.x, this.y+this.height, 7, "yellow", 1);
+                drawCircle(context, this.x+this.width, this.y+17, 7, "white", 1);
+                drawCircle(context, this.x+this.width, this.y+this.height, 7, "red", 1);
+            }
         }
 
         setSpeed(speedX, speedY) {
@@ -219,12 +230,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.image;
             this.yFrames;
             
-            // Enemy + gun position
+            // Enemy, gun and bullet position
             this.x;
             this.y;
             this.gunX;
             this.gunY;
-
             this.bulletX;
             this.bulletY;
 
@@ -255,6 +265,9 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             }
             this.y = TOP_MARGIN + Math.random() * (this.game.height - TOP_MARGIN);
             this.gunY = this.y+30;
+
+            this.bulletX = this.gunX;
+            this.bulletY = this.gunY;
             
             
         }
@@ -270,7 +283,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.width, this.height
             );
 
-            if (this.shot){
+            if (this.shot && !this.bulletGone){
 
                 context.drawImage(
                     this.bulletImage,
@@ -316,7 +329,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     this.frameY ++;
                 else {
                     this.frameY = 0;
-                    console.log("shot")
                     this.shot = true;
                     this.stop = false;
                     this.bulletX = this.side=='left' ? this.gunX : this.gunX - this.bulletWidth;
@@ -325,32 +337,25 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 
             }
             
-
-            // Respawn after going out of screen
+            //  Move bullet and respawn after going out of screen
             if (this.shot) {
-                
-                console.log(this.bulletX)
-
                 if (this.side == 'left'){ 
-                    
                     this.bulletX += 1.5*this.speedX;
-
-                    if(this.bulletX > this.game.width)
+                    if(!this.bulletGone && this.bulletX > this.game.width)
                         this.bulletGone = true
-
+                    
+                    // Respawn after going out of screen
                     if (this.spriteX + this.width < 0 ) {
                         this.respawn();
                     }
                 }
-
-
-                if (this.side == 'right'){
-
+                else {
+                    
                     this.bulletX -= 1.5*this.speedX;
-
-                    if(this.bulletX + this.bulletWidth < 0)
+                    if(!this.bulletGone && this.bulletX + this.bulletWidth < 0)
                         this.bulletGone = true;
                     
+                    // Respawn after going out of screen
                     if(this.spriteX > this.game.width){
                         this.respawn();
     
@@ -372,25 +377,33 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.spirteHeight = 200;
             this.width = this.spriteWidth;
             this.height = this.spirteHeight;
-
             this.bulletWidth = 32;
             this.bulletHeight = 30;
 
-            this.frameX = 0;
-            this.frameY = 0;
-
-            this.yFrames = 7;
-
             // Sprite position 
             this.spriteX;
-            this.spriteY;    
+            this.spriteY;
+
+            // Sprite frames
+            this.frameX = 0;
+            this.frameY = 0;
+            this.yFrames = 7;
+
+            this.damage = 50;
 
             this.respawn();
         }
 
         draw(context){
             super.draw(context);
-            drawCircle(context, this.gunX, this.gunY, 15, 'red', 0.1);
+            if (this.game.debug){
+                drawCircle(context, this.gunX, this.gunY, 15, 'red', 0.1);
+
+                drawCircle(context, this.bulletX, this.bulletY, 3, "white", 1);
+                drawCircle(context, this.bulletX, this.bulletY+this.bulletHeight, 3, "white", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY, 3, "black", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY+this.bulletHeight, 3, "black", 1);
+            }
         }
 
         update(){
@@ -399,6 +412,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height/2;
             this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
+
+            if(this.bulletGone){
+                this.bulletX = this.gunX;
+                this.bulletY = this.gunY;
+            }
 
         }
     }
@@ -416,16 +434,55 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.numberOfPlants = 10;
             this.plants = [];
             
-            this.maxEnemies = 10;
+            this.maxEnemies = 2;
             this.enemies = [];
+            
+            this.debug = false;
         }  
-        
+
+        // Check if enemy hit the player
+        checkShot(enemy) {
+            // Check Y coordinates
+            if(enemy.bulletY >= this.player.y+17 && enemy.bulletY+enemy.bulletHeight <= this.player.y+17+this.player.height) {
+            
+                if(enemy.side == 'right') {
+                    //  Check X coordinates
+                    if(enemy.bulletX <= (this.player.x+this.player.width)*0.92 && enemy.bulletX+enemy.bulletWidth >= this.player.x) {
+                        this.player.health -= enemy.damage;
+                        enemy.bulletGone = true;
+                    }
+                }
+                else {
+                    //  Check X coordinates
+                    if(enemy.bulletX+enemy.bulletWidth >= this.player.x+this.player.width*0.08 && enemy.bulletX+enemy.bulletWidth <= this.player.x+this.player.width) {
+                        this.player.health -= enemy.damage;
+                        enemy.bulletGone = true;
+                    }
+                }
+            }
+        }
+
         render(context, deltaTime) {
             this.player.draw(context);
             this.player.update(deltaTime);
             this.plants.forEach(plant => plant.draw(context));
             this.enemies.forEach(enemy => enemy.draw(context));
-            this.enemies.forEach(enemy => enemy.update(context));
+            this.enemies.forEach(enemy => {
+                enemy.update(context);
+                this.checkShot(enemy);
+            });
+
+            context.save();
+            ctx.fillStyle='white';
+            ctx.font = '35px Helvetica';
+            context.textAlign = 'left';
+            ctx.lineWidth = 5;
+            ctx.strokeStyle='black';
+
+            context.strokeText('HEALTH: ' + this.player.health, 80, 70);
+            context.fillText('HEALTH: ' + this.player.health, 80, 70);
+            context.restore();            
+
         }
 
         init(){
