@@ -171,6 +171,10 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.height,
             );
         }
+
+        update(){
+
+        }
     }
 
     class Bush extends Obstacle {
@@ -434,8 +438,10 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.numberOfPlants = 10;
             this.plants = [];
             
-            this.maxEnemies = 2;
+            this.maxEnemies = 5;
             this.enemies = [];
+
+            this.gameObjects = [];
             
             this.debug = false;
         }  
@@ -463,9 +469,17 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
 
         render(context, deltaTime) {
-            this.player.draw(context);
-            this.player.update(deltaTime);
-            this.plants.forEach(plant => plant.draw(context));
+            this.gameObjects = [this.player, ...this.plants];
+            
+            this.gameObjects.sort((a,b) => {
+                return ((a.y + a.height) - (b.y + b.height))
+            });
+
+            this.gameObjects.forEach(obj => {
+                obj.draw(context);
+                obj.update(deltaTime);
+            })
+
             this.enemies.forEach(enemy => enemy.draw(context));
             this.enemies.forEach(enemy => {
                 enemy.update(context);
