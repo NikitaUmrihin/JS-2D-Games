@@ -325,6 +325,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             
             this.image;
             this.yFrames;
+            this.fireAnimation = 0;
             
             // Enemy, gun and bullet position
             this.x;
@@ -338,7 +339,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.stop;
             this.shot;
             this.bulletGone;
-            this.burst = false;
         }
 
         respawn(){
@@ -347,6 +347,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.shot = false;
             this.stop = false;
             this.bulletGone = false;
+            this.fireAnimation = 0;
             
             if (this.side == 'left') {
                 this.x = - this.delay;
@@ -416,14 +417,26 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         
             }
 
-            // Shoot when reaching position
+            // Shooting animation - when reaching position
             if (this.stop && !this.shot) {
-                if (this.frameY < this.yFrames)
+                this.fireAnimation += 0.5;
+
+                if (this.fireAnimation >= 1 && this.frameY < this.yFrames/2)
+                {
                     this.frameY ++;
-                else {
+                    this.fireAnimation = 0;
+                }
+
+                else if(this.frameY >= this.yFrames/2 && this.frameY < this.yFrames)
+                    this.frameY ++;
+
+                // if (this.frameY < this.yFrames)
+                // {
+                //     this.frameY ++;
+                // }
+                else if (this.fireAnimation >= 1 ){
                     this.frameY = 0;
                     this.shot = true;
-                    // this.stop = false;
                     this.bulletX = this.side=='left' ? this.gunX : this.gunX - this.bulletWidth;
                     this.bulletY = this.gunY - 15;
                 } 
