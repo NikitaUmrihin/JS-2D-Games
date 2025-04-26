@@ -5,11 +5,11 @@ const BILLIES_SPEED =           [5,     4,        4,         3,         3,      
 const BILLIES_BULLET_SPEED =    [2,     3,        5,         4,         7,         6,        5];
 const BILLIES_BULLET_DAMAGE =   [50,    50,       30,        75,        100,       100,      100];
 
-const SHROOM_GOAL = 1;
+const SHROOM_GOAL = 50;
 const SHROOM_SPAWN_SECONDS = 4;
 const MAX_SHROOMS = 10;
 
-const PLAYER_HEALTH = 1;
+const PLAYER_HEALTH = 1000;
 
 
 // Draw circle
@@ -48,7 +48,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'd'){
                     this.game.debug = !this.game.debug;
-                } 
+                }
+                else if(e.key === 'r') {
+                    this.game.restart();
+                    this.game.init();
+                }
                 else
                     this.game.lastKey = e.key + 'Pressed';
             });
@@ -87,6 +91,13 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.fps = 30;
             this.frameInterval = 1000/this.fps;
             this.frameTimer = 0;
+        }
+        
+        restart(){
+            this.x = this.game.width * 0.5;
+            this.y = this.game.height * 0.5;
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5;
         }
 
         draw(context){
@@ -1073,6 +1084,19 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.debug = false;
         }  
 
+        restart() {
+            this.player.restart();
+            this.score = 0;
+            this.plants = [];
+            this.enemies = [];
+            this.shrooms = [];
+            this.fx = [];
+            this.gameObjects = [];
+            this.shroomSpawnTimer = 0;
+            this.win = false;
+            this.gameOver = false;  
+
+        }
         removeGameObjects(objects){
             objects = objects.filter(obj => !obj.needToDelete);
             return objects
@@ -1202,6 +1226,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             context.restore();
         }
         
+
 
         render(context, deltaTime) {
             this.gameObjects = [this.player, ...this.plants, ...this.shrooms];
