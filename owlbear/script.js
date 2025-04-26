@@ -1,14 +1,15 @@
 const TOP_MARGIN = window.innerHeight *0.2;
 
-// BILLIES ORDER = {Billy, BillyBoy, BabyBilly, BillyGirl, BillyGoat, BillyBob, BillyBeth}
-const BILLIES_SPEED = [5,4,4,3,2,1,0.75];
-const BILLIES_BULLET_SPEED = [2,3,5,4,7,6,5];
-const BILLIES_BULLET_DAMAGE = [30,30,20,60,70,75,150];
+// BILLIES ORDER =              {Billy, BillyBoy, BabyBilly, BillyGirl, BillyGoat, BillyBob, BillyBeth}
+const BILLIES_SPEED =           [5,     4,        4,         3,         3,         1,        0.75];
+const BILLIES_BULLET_SPEED =    [2,     3,        5,         4,         7,         6,        5];
+const BILLIES_BULLET_DAMAGE =   [50,    50,       30,        75,        100,       100,      100];
 
+const SHROOM_GOAL = 1;
 const SHROOM_SPAWN_SECONDS = 4;
 const MAX_SHROOMS = 10;
 
-const PLAYER_HEALTH = 1000;
+const PLAYER_HEALTH = 1;
 
 
 // Draw circle
@@ -222,7 +223,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             //  If mushroom was eaeten - remove it 
             if(this.frameX >= 27) {
-                this.game.score++;
+                if(!this.game.gameOver)
+                    this.game.score++;
                 this.needToDelete = true;
                 this.game.shrooms = this.game.removeGameObjects(this.game.shrooms);
                 for (let i=0; i<4; i++){
@@ -428,7 +430,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                         
                         
                         // Respawn after going out of screen
-                        if (this.spriteX + this.width < 0 ) {
+                        if (this.spriteX + this.width < 0  && !this.game.gameOver) {
                         this.respawn();
                     }
                 }
@@ -442,7 +444,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                         this.bulletGone = true;
 
                     // Respawn after going out of screen
-                    if(this.spriteX > this.game.width){
+                    if(this.spriteX > this.game.width && !this.game.gameOver){
                         this.respawn();
     
                     }
@@ -1066,6 +1068,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             this.gameObjects = [];
             
+            this.win = false;
+            this.gameOver = false;            
             this.debug = false;
         }  
 
@@ -1080,7 +1084,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             const dy = (this.player.y+this.player.height*0.5) - (shroom.y +shroom.height*0.75);
             const distance = Math.sqrt(dx ** 2 + dy ** 2);
             const radiusSum = this.player.radius + shroom.radius
-            return distance < radiusSum*0.8 
+            return distance < radiusSum*0.85 
         }
 
         // Check if enemy hit the player
@@ -1092,9 +1096,13 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 if(enemy.side == 'right') {
                     //  Check X coordinates
                     if(enemy.bulletX <= this.player.x+this.player.width*0.92 && enemy.bulletX+enemy.bulletWidth >= this.player.x) {
-                        let r;      //  Randomization factor for enemy damage 
-                        do r = Math.random(); while (r === 0); 
-                        this.player.health -= Math.floor(r * enemy.damage);
+                        
+                        if(!this.gameOver){
+                            let r;      //  Randomization factor for enemy damage 
+                            do r = Math.random(); while (r === 0); 
+                            this.player.health -= Math.floor(r * enemy.damage);
+                        }
+
                         enemy.bulletGone = true;
                         // enemy.stop = false;
                         for (let i=0; i<5; i++){
@@ -1107,9 +1115,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 else {
                     //  Check X coordinates
                     if(enemy.bulletX >= this.player.x+this.player.width*0.08 && enemy.bulletX+enemy.bulletWidth <= this.player.x+this.player.width) {
-                        let r;      //  Randomization factor for enemy damage
-                        do r = Math.random(); while (r === 0); 
-                        this.player.health -= Math.floor(r * enemy.damage);
+                        if(!this.gameOver){
+                            let r;      //  Randomization factor for enemy damage
+                            do r = Math.random(); while (r === 0); 
+                            this.player.health -= Math.floor(r * enemy.damage);
+                        }
                         enemy.bulletGone = true;
                         // enemy.stop = false;
                         for (let i=0; i<5; i++){
@@ -1153,6 +1163,45 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 }
             }
         }
+        showFinalMessage(context) {
+            this.gameOver = true;
+            if (!this.win) {
+                this.player.health = 0;
+            }
+        
+            context.save();
+            context.fillStyle = 'rgba(0,0,0,0.75)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+        
+            context.fillStyle = this.win ? 'lightgreen' : '#CD9A99';
+            context.fillStroke = this.win ? 'darkgreen' : 'red';
+            context.lineWidth = 1;
+        
+            context.textAlign = 'center';
+        
+            context.font = '130px David';
+            context.fillText(this.win ? "WINNER" : "LOSER", this.width * 0.5, this.height * 0.25);
+            context.strokeText(this.win ? "WINNER" : "LOSER", this.width * 0.5, this.height * 0.25);
+        
+            context.font = '42px Tahoma';
+            context.fillText(
+                this.win ? "YOU ESCAPED THE" : "YOU WERE HUNTED BY",
+                this.width * 0.5,
+                this.height * 0.25 + 50
+            );
+            context.strokeText(
+                this.win ? "YOU ESCAPED THE" : "YOU WERE HUNTED BY",
+                this.width * 0.5,
+                this.height * 0.25 + 50
+            );
+        
+            context.font = '120px Georgia';
+            context.fillText("HILL BILLIES", this.width * 0.5, this.height * 0.25 + 150);
+            context.strokeText("HILL BILLIES", this.width * 0.5, this.height * 0.25 + 150);
+        
+            context.restore();
+        }
+        
 
         render(context, deltaTime) {
             this.gameObjects = [this.player, ...this.plants, ...this.shrooms];
@@ -1179,26 +1228,35 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             });
 
             // Spawn a new shroom every 'shroomSpawnInterval' ms, up to MAX_SHROOMS
-            if (!this.gameOver && !this.levelWon && this.shroomSpawnTimer > this.shroomSpawnInterval && this.shrooms.length < MAX_SHROOMS) {
+            if (!this.gameOver && this.shroomSpawnTimer > this.shroomSpawnInterval && this.shrooms.length < MAX_SHROOMS) {
                 this.shrooms.push(new MushroomPowerUp(this))
                 this.shroomSpawnTimer = 0;
             } else {
                 this.shroomSpawnTimer += deltaTime;
             }
 
-            context.save();
+            if (this.player.health <= 0){
+                this.showFinalMessage(ctx);
+            }
+            
+            if (this.score >= SHROOM_GOAL){
+                this.win = true;
+                this.showFinalMessage(ctx);
+            }
+
+            ctx.save();
             ctx.fillStyle='white';
             ctx.font = '35px Helvetica';
-            context.textAlign = 'left';
+            ctx.textAlign = 'left';
             ctx.lineWidth = 5;
             ctx.strokeStyle='black';
 
-            context.strokeText('HEALTH: ' + this.player.health, 180, 70);
-            context.fillText('HEALTH: ' + this.player.health, 180, 70);
+            ctx.strokeText('HEALTH: ' + this.player.health, 180, 70);
+            ctx.fillText('HEALTH: ' + this.player.health, 180, 70);
 
-            context.strokeText('SCORE: ' + this.score, 180, 120);
-            context.fillText('SCORE: ' + this.score, 180, 120);
-            context.restore();            
+            ctx.strokeText('SCORE: ' + this.score, 180, 120);
+            ctx.fillText('SCORE: ' + this.score, 180, 120);
+            ctx.restore();            
 
         }
 
@@ -1216,19 +1274,16 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             for (let i=0; i<3; i++){
                 this.enemies.push(new Billy(this));
                 this.enemies.push(new BillyBoy(this));
-                this.enemies.push(new BabyBillyBoy(this));
-                this.enemies.push(new BillyBeth(this))
-                
+                this.enemies.push(new BabyBillyBoy(this));                
                 if(i<2){
                     this.enemies.push(new BillyGirl(this));
                     this.enemies.push(new BillyGoat(this));
-                    this.enemies.push(new BillyBeth(this))
                 }
                 if(i<1){
-                    this.enemies.push(new BillyBeth(this))
+                    this.enemies.push(new BillyBeth(this));
                     this.enemies.push(new BillyBob(this));
                 }
-            }   
+            }
             
         }
     }
