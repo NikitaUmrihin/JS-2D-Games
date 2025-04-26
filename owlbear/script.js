@@ -1,9 +1,9 @@
 const TOP_MARGIN = window.innerHeight *0.2;
 
-// BILLIES ORDER = {Billy, BillyBoy, BabyBilly, BillyGirl, BillyGoat}
-const BILLIES_SPEED = [3,3,2,2,1];
-const BILLIES_BULLET_SPEED = [2,3,5,4,6];
-const BILLIES_BULLET_DAMAGE = [30,30,20,60,70];
+// BILLIES ORDER = {Billy, BillyBoy, BabyBilly, BillyGirl, BillyGoat, BillyBob, BillyBeth}
+const BILLIES_SPEED = [5,4,4,3,2,1,0.75];
+const BILLIES_BULLET_SPEED = [2,3,5,4,7,6,5];
+const BILLIES_BULLET_DAMAGE = [30,30,20,60,70,75,150];
 
 const SHROOM_SPAWN_SECONDS = 4;
 const MAX_SHROOMS = 10;
@@ -101,7 +101,6 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             if(this.game.debug){
 
                 drawCircle(context, this.x+this.width*0.5, this.y+this.height*0.5, this.radius, "white", 0.3);
-
 
                 drawCircle(context, this.x, this.y+17, 7, "black", 1);
                 drawCircle(context, this.x, this.y+this.height, 7, "yellow", 1);
@@ -223,6 +222,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             //  If mushroom was eaeten - remove it 
             if(this.frameX >= 27) {
+                this.game.score++;
                 this.needToDelete = true;
                 this.game.shrooms = this.game.removeGameObjects(this.game.shrooms);
                 for (let i=0; i<4; i++){
@@ -308,7 +308,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             
             // Set enemy speed and delay
             this.speedX = Math.random() * 3;
-            this.delay = Math.random() * this.game.width * 3; // How far from screen the will enemy spawn
+            this.delay = Math.random() * this.game.width * 5; // How far from screen the will enemy spawn
             
             this.image;
             this.yFrames;
@@ -325,6 +325,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.stop;
             this.shot;
             this.bulletGone;
+            this.burst = false;
         }
 
         respawn(){
@@ -381,12 +382,13 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height;
 
-            // Go left / right
+            // Enemy appears on screen
             if(this.side == 'right' && !this.stop && !this.shot)
                 this.x -= this.speedX;
             else if(this.side == 'left' && !this.stop && !this.shot)
                 this.x += this.speedX;
 
+            // Enemy dissapears after shooting
             else if(this.side == 'right' && !this.stop && this.shot)
                 this.x += this.speedX;
             else if(this.side == 'left' && !this.stop && this.shot)
@@ -402,7 +404,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             }
 
             // Shoot when reaching position
-            if (this.stop == true && !this.shot) {
+            if (this.stop && !this.shot) {
                 if (this.frameY < this.yFrames)
                     this.frameY ++;
                 else {
@@ -416,7 +418,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             }
             
             //  Move bullet and respawn after going out of screen
-            if (this.shot) {
+            if (this.shot && !this.burst) {
                 if (this.side == 'left'){ 
                     this.bulletX += this.bulletSpeedX;
                     if(!this.bulletGone && this.bulletX > this.game.width*0.85)
@@ -445,7 +447,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
     
                     }
                 }  
-            } 
+            }
             
             if(this.bulletGone){
                 this.bulletX = this.gunX;
@@ -487,6 +489,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         respawn(){
             super.respawn();
+            if(this.bulletGone) this.stop = false;
             this.gunY = this.y+30;
             this.bulletX = this.gunX;
             this.bulletY = this.gunY;
@@ -505,7 +508,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         update(){
             super.update();
-
+            if(this.bulletGone) this.stop = false;
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height/2;
             this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
@@ -546,8 +549,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         respawn(){
             super.respawn();
+            if(this.bulletGone) this.stop = false;
             this.gunY = this.y+30;
-
             this.bulletX = this.gunX;
             this.bulletY = this.gunY;
         }
@@ -566,7 +569,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         update(){
             super.update();
-
+            if(this.bulletGone) this.stop = false;
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height/2;
             this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
@@ -628,7 +631,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         update(){
             super.update();
-
+            if(this.bulletGone) this.stop = false;
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height/2;
             this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
@@ -669,6 +672,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         respawn(){
             super.respawn();
+            if(this.bulletGone) this.stop = false;
             this.gunY = this.y+30;
             this.bulletX = this.gunX;
             this.bulletY = this.gunY;
@@ -688,15 +692,13 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         update(){
             super.update();
-
+            if(this.bulletGone) this.stop = false;
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height/2;
             this.gunX = this.side == 'left' ? this.x+150 : this.x-150;
 
         }
     }
-
-
 
 
     class BillyGoat extends Enemy {
@@ -725,7 +727,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
             this.damage = BILLIES_BULLET_DAMAGE[4];
             this.speedX = this.speedX + BILLIES_SPEED[4];
-            this.bulletSpeedX = this.speedX + BILLIES_BULLET_SPEED[4    ];
+            this.bulletSpeedX = this.speedX + BILLIES_BULLET_SPEED[4];
 
             this.respawn();
         }
@@ -751,7 +753,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         update(){
             super.update();
-
+            if(this.bulletGone) this.stop = false;
             this.spriteX = this.x - this.width * 0.5;
             this.spriteY = this.y - this.height/2;
             this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
@@ -759,6 +761,190 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
+    class BillyBob extends Enemy {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('billy6');
+            this.bulletImage = document.getElementById('bullet3');
+
+            // Set sprites dimensions    
+            this.spriteWidth = 489;
+            this.spirteHeight = 195;
+            this.width = this.spriteWidth;
+            this.height = this.spirteHeight;
+            this.bulletWidth = 67;
+            this.bulletHeight = 30;
+
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;
+
+            // Sprite frames
+            this.frameX = 0;
+            this.frameY = 0;
+            this.yFrames = 7;
+
+            this.damage = BILLIES_BULLET_DAMAGE[5];
+            this.speedX = this.speedX + BILLIES_SPEED[5];
+            this.bulletSpeedX = this.speedX + BILLIES_BULLET_SPEED[5];
+
+            this.hasSecondShot = false;
+            this.firstBulletGone = false;
+            this.secondBulletGone = false;
+
+            this.respawn();
+        }
+
+        respawn(){
+            super.respawn();
+            this.gunY = this.y+20;
+            this.hasSecondShot = false;
+            this.firstBulletGone = false;
+            this.secondBulletGone = false;
+            this.bulletX = this.gunX;
+            this.bulletY = this.gunY;
+            this.secondBulletX = this.gunX;
+            this.secondBulletY = this.gunY;
+        }
+
+        draw(context){
+            super.draw(context);
+
+            if (this.game.debug){
+                drawCircle(context, this.gunX, this.gunY, 15, 'red', 0.5);
+
+                drawCircle(context, this.bulletX, this.bulletY, 3, "white", 1);
+                drawCircle(context, this.bulletX, this.bulletY+this.bulletHeight, 3, "white", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY, 3, "black", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY+this.bulletHeight, 3, "black", 1);
+
+
+                drawCircle(context, this.secondBulletX, this.secondBulletY, 3, "white", 1);
+                drawCircle(context, this.secondBulletX, this.secondBulletY+this.bulletHeight, 3, "white", 1);
+                drawCircle(context, this.secondBulletX+this.bulletWidth, this.secondBulletY, 3, "black", 1);
+                drawCircle(context, this.secondBulletX+this.bulletWidth, this.secondBulletY+this.bulletHeight, 3, "black", 1);
+            }
+
+            // Draw second bullet if shot
+            if (this.hasSecondShot && !this.secondBulletGone) {
+                context.drawImage(
+                    this.bulletImage,
+                    this.frameX * this.bulletWidth, 0,
+                    this.bulletWidth, this.bulletHeight,
+                    this.secondBulletX, this.secondBulletY,
+                    this.bulletWidth, this.bulletHeight
+                );
+            }
+        }
+
+        update(){
+            super.update();
+
+            this.spriteX = this.x - this.width * 0.5;
+            this.spriteY = this.y - this.height/2;
+            this.gunX = this.side == 'left' ? this.x+120 : this.x-120;
+
+            if(this.shot && !this.secondBulletGone)
+                this.stop = true;
+
+            
+            if (this.shot && !this.hasSecondShot) {
+                // Randomization factor for second shot
+                let r; do r = Math.random(); while (r === 0);   
+                // When first bullet travels r % of screen, fire second shot
+                if ((this.side === 'left'  && this.bulletX >= this.game.width * r) ||
+                    (this.side === 'right' && this.bulletX <= this.game.width * 1-r)) {
+                    
+                    if (this.frameY < this.yFrames)
+                        this.frameY ++;
+                    else {
+                        this.frameY = 0;
+                        this.hasSecondShot = true;
+                        this.secondBulletX = this.side=='left' ? this.gunX : this.gunX - this.bulletWidth;
+                        this.secondBulletY = this.gunY-15;
+                    }
+                }
+            }
+
+            // Move second bullet
+            if (this.hasSecondShot && !this.secondBulletGone) {
+                if (this.side === 'left') {
+                    this.secondBulletX += this.bulletSpeedX;
+                    if (this.secondBulletX > this.game.width * 0.85 || this.secondBulletGone) {
+                        this.stop = false;
+                    }
+                } else {
+                    this.secondBulletX -= this.bulletSpeedX;
+                    if (this.secondBulletX + this.bulletWidth < this.game.width * 0.15 || this.secondBulletGone) {
+                        this.stop = false;
+                    }
+                }
+            }
+
+        }
+    }
+
+
+    class BillyBeth extends Enemy {
+        constructor(game) {
+            super(game);
+            // this.game = game;
+            this.image = document.getElementById('billy7');
+            this.bulletImage = document.getElementById('bullet4');
+
+            // Set sprites dimensions    
+            this.spriteWidth = 389;
+            this.spirteHeight = 191;
+            this.width = this.spriteWidth;
+            this.height = this.spirteHeight;
+            this.bulletWidth = 120;
+            this.bulletHeight = 34;
+
+            // Sprite position 
+            this.spriteX;
+            this.spriteY;
+
+            // Sprite frames
+            this.frameX = 0;
+            this.frameY = 0;
+            this.yFrames = 7;
+
+            this.damage = BILLIES_BULLET_DAMAGE[6];
+            this.speedX = this.speedX + BILLIES_SPEED[6];
+            this.bulletSpeedX = this.speedX + BILLIES_BULLET_SPEED[6];
+
+            this.respawn();
+        }
+
+        respawn(){
+            super.respawn();
+            this.gunY = this.y+15;
+            this.bulletX = this.gunX;
+            this.bulletY = this.gunY;
+        }
+
+        draw(context){
+            super.draw(context);
+            if (this.game.debug){
+                drawCircle(context, this.gunX, this.gunY, 15, 'red', 0.5);
+
+                drawCircle(context, this.bulletX, this.bulletY, 3, "white", 1);
+                drawCircle(context, this.bulletX, this.bulletY+this.bulletHeight, 3, "white", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY, 3, "black", 1);
+                drawCircle(context, this.bulletX+this.bulletWidth, this.bulletY+this.bulletHeight, 3, "black", 1);
+            }
+        }
+
+        update(){
+            super.update();
+            if(this.bulletGone) this.stop = false;
+            this.spriteX = this.x - this.width * 0.5;
+            this.spriteY = this.y - this.height/2;
+            this.gunX = this.side == 'left' ? this.x+100 : this.x-100;
+
+        }
+    }
 
     // ==================== FX Classes ====================
     class FX {
@@ -841,6 +1027,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             this.height = height;
             this.lastKey = undefined;
             this.input = new InputHandler(this);
+            
+            this.score = 0;
             this.player = new Player(this);
 
             this.numberOfPlants = 10;
@@ -877,15 +1065,18 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
 
         // Check if enemy hit the player
         checkShot(enemy) {
+
             // Check Y coordinates
             if(enemy.bulletY >= this.player.y+17 && enemy.bulletY+enemy.bulletHeight <= this.player.y+17+this.player.height) {
             
                 if(enemy.side == 'right') {
                     //  Check X coordinates
                     if(enemy.bulletX <= this.player.x+this.player.width*0.92 && enemy.bulletX+enemy.bulletWidth >= this.player.x) {
-                        this.player.health -= enemy.damage;
+                        let r;      //  Randomization factor for enemy damage 
+                        do r = Math.random(); while (r === 0); 
+                        this.player.health -= Math.floor(r * enemy.damage);
                         enemy.bulletGone = true;
-                        enemy.stop = false;
+                        // enemy.stop = false;
                         for (let i=0; i<5; i++){
                             this.fx.push(new Blood(this, enemy.bulletX, enemy.bulletY, "red", 0.75));
                         }
@@ -894,11 +1085,45 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 else {
                     //  Check X coordinates
                     if(enemy.bulletX >= this.player.x+this.player.width*0.08 && enemy.bulletX+enemy.bulletWidth <= this.player.x+this.player.width) {
-                        this.player.health -= enemy.damage;
+                        let r;      //  Randomization factor for enemy damage
+                        do r = Math.random(); while (r === 0); 
+                        this.player.health -= Math.floor(r * enemy.damage);
                         enemy.bulletGone = true;
-                        enemy.stop = false;
+                        // enemy.stop = false;
                         for (let i=0; i<5; i++){
                             this.fx.push(new Blood(this, enemy.bulletX, enemy.bulletY, "red", 0.75));
+                        }
+                    }
+                }
+            }
+
+            // Check second bullet if present
+            if (enemy.hasSecondShot && !enemy.secondBulletGone) {
+                // Check Y coordinates
+                if (enemy.secondBulletY >= this.player.y + 17 &&
+                    enemy.secondBulletY + enemy.bulletHeight <= this.player.y + 17 + this.player.height) {
+
+                    if (enemy.side === 'right') {
+                        if (enemy.secondBulletX <= this.player.x + this.player.width * 0.92 && enemy.secondBulletX + enemy.bulletWidth >= this.player.x) {
+                            let r;      //  Randomization factor for enemy damage
+                            do r = Math.random(); while (r === 0);                            
+                            this.player.health -= Math.floor(r * enemy.damage);
+                            enemy.secondBulletGone = true;
+                            enemy.stop = false;
+                            
+                            for (let i = 0; i < 5; i++)
+                                this.fx.push(new Blood(this, enemy.secondBulletX, enemy.secondBulletY, "red", 0.75));
+                        }
+                    } else {
+                        if (enemy.secondBulletX >= this.player.x + this.player.width * 0.08 && enemy.secondBulletX + enemy.bulletWidth <= this.player.x + this.player.width) {
+                            let r;      //  Randomization factor for enemy damage
+                            do r = Math.random(); while (r === 0);   
+                            this.player.health -= Math.floor(r * enemy.damage);
+                            enemy.secondBulletGone = true;
+                            enemy.stop = false;
+
+                            for (let i = 0; i < 5; i++)
+                                this.fx.push(new Blood(this, enemy.secondBulletX, enemy.secondBulletY, "red", 0.75));
                         }
                     }
                 }
@@ -944,8 +1169,11 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             ctx.lineWidth = 5;
             ctx.strokeStyle='black';
 
-            context.strokeText('HEALTH: ' + this.player.health, 80, 70);
-            context.fillText('HEALTH: ' + this.player.health, 80, 70);
+            context.strokeText('HEALTH: ' + this.player.health, 180, 70);
+            context.fillText('HEALTH: ' + this.player.health, 180, 70);
+
+            context.strokeText('SCORE: ' + this.score, 180, 120);
+            context.fillText('SCORE: ' + this.score, 180, 120);
             context.restore();            
 
         }
@@ -970,8 +1198,12 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                     this.enemies.push(new BillyGirl(this));
                     this.enemies.push(new BillyGoat(this));
                 }
-            }
-
+                if(i<0){
+                    this.enemies.push(new BillyBob(this));
+                    this.enemies.push(new BillyBeth(this))
+                }
+            }   
+            
         }
     }
 
