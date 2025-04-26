@@ -450,7 +450,7 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
             }
             
             if(this.bulletGone){
-                this.bulletX = this.gunX;
+                this.bulletX = this.side=='left' ? this.gunX - this.width : this.gunX + this.width;
                 this.bulletY = this.gunY;
             }
         }
@@ -997,6 +997,26 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
         }
     }
 
+    // Explosion class - used when a player gets hit by rocket
+    class Explosion extends FX {
+        update(){
+            // Give the fx downward circular motion
+            this.angle += this.va * 0.5;
+            this.x += 2 * Math.sin(this.angle) * this.speedX;
+            this.y -= Math.cos(this.angle) * this.speedY;
+    
+            // Make the particles smaller
+            if (this.radius > 0.1) 
+                this.radius -= 0.05;
+            
+            // Make particles dissapear when they are small enough
+            if (this.radius < 0.2){
+                this.needToDelete = true;
+                this.game.fx = this.game.removeGameObjects(this.game.fx);
+            }
+        }
+    }
+
     // Munch class - used when player eats a shroom
     class Munch extends FX {
         constructor(game, x, y, color, opacity){
@@ -1079,6 +1099,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                         // enemy.stop = false;
                         for (let i=0; i<5; i++){
                             this.fx.push(new Blood(this, enemy.bulletX, enemy.bulletY, "red", 0.75));
+                            if(enemy.bulletWidth == 120)
+                                this.fx.push(new Explosion(this, enemy.bulletX, enemy.bulletY, "orange", 0.75));
                         }
                     }
                 }
@@ -1092,6 +1114,8 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                         // enemy.stop = false;
                         for (let i=0; i<5; i++){
                             this.fx.push(new Blood(this, enemy.bulletX, enemy.bulletY, "red", 0.75));
+                            if(enemy.bulletWidth == 120)
+                                this.fx.push(new Explosion(this, enemy.bulletX, enemy.bulletY, "orange", 0.75));
                         }
                     }
                 }
@@ -1193,14 +1217,16 @@ window.addEventListener('load', function ()     // Waits for the whole page to l
                 this.enemies.push(new Billy(this));
                 this.enemies.push(new BillyBoy(this));
                 this.enemies.push(new BabyBillyBoy(this));
+                this.enemies.push(new BillyBeth(this))
                 
                 if(i<2){
                     this.enemies.push(new BillyGirl(this));
                     this.enemies.push(new BillyGoat(this));
-                }
-                if(i<0){
-                    this.enemies.push(new BillyBob(this));
                     this.enemies.push(new BillyBeth(this))
+                }
+                if(i<1){
+                    this.enemies.push(new BillyBeth(this))
+                    this.enemies.push(new BillyBob(this));
                 }
             }   
             
