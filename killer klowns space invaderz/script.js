@@ -26,11 +26,59 @@ class Player {
         if(this.x > this.game.width - this.width) 
             this.x = this.game.width - this.width;
     }
+
+    shoot(){
+        const missile = this.game.getMissile();
+        if(missile){
+            missile.start(this.x + this.width / 2 - missile.width / 2, this.y);
+        }
+    }
 }
 
 
 // _____________________________________________________________________________
 // _____________________________________________________________________________
+
+class Missile {
+    constructor(game){
+        this.width = 4;
+        this.height = 20;
+        this.x = game.width / 2 - this.width / 2;
+        this.y = game.height - this.height;
+
+        this.speed = 10;
+
+        this.available = true;
+    }
+
+    draw(context){
+        if(!this.available){
+            context.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+    update(){
+        if(!this.available) {
+            this.y -= this.speed;
+            if(this.y < 0 - this.height){
+                this.reset();
+            }
+        }
+
+    }
+    start(x, y){
+        this.x = x;
+        this.y = y;
+        this.available = false;
+    }
+    reset(){
+        this.available = true;
+    }
+}
+
+// _____________________________________________________________________________
+// _____________________________________________________________________________
+
+
 
 
 class Game {
@@ -41,12 +89,16 @@ class Game {
 
         this.keys = [];
         this.player = new Player(this);
+
+        this.missiles = [];
+        this.numberofMissiles = 5; 
+        this.createMissiles();
         
         window.addEventListener('keydown', e => {
-            
             if(this.keys.indexOf(e.key) === -1)
                 this.keys.push(e.key);
-            console.log(this.keys);
+            if(e.key === ' ')
+                this.player.shoot();
         });
         
         window.addEventListener('keyup', e => {
@@ -60,6 +112,25 @@ class Game {
     render(context){
         this.player.draw(context);
         this.player.update();
+        this.missiles.forEach(missile => {
+            missile.update();
+            missile.draw(context);
+        });
+    }
+
+
+
+    createMissiles(){
+        for(let i = 0; i < this.numberofMissiles; i++){
+            this.missiles.push(new Missile(this));
+        }
+    }
+    getMissile(){
+        for(let i = 0; i < this.numberofMissiles; i++){
+            if(this.missiles[i].available){
+                return this.missiles[i];
+            }
+        }
     }
 
 }
