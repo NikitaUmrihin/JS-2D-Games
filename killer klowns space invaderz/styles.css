@@ -1,0 +1,9 @@
+#canvas1{
+    /* background: url('background.png'); */
+    background-size: 100% 100%;
+    border: 7px solid black;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+}
